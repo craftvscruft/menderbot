@@ -9,6 +9,7 @@ rich-click = "*"
 openai = "*"
 
 [dev-packages]
+black = "*"
 
 [requires]
 python_version = "3.9"
