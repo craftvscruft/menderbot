@@ -7,9 +7,13 @@ name = "pypi"
 click = "*"
 rich-click = "*"
 openai = "*"
+tree-sitter = "*"
+charset-normalizer = "*"
+tiktoken = "*"
 
 [dev-packages]
 black = "*"
+pytest = "*"
 
 [requires]
 python_version = "3.9"
