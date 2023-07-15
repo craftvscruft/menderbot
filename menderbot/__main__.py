@@ -1,9 +1,14 @@
+import logging
+import os
 import rich_click as click
 from rich.progress import Progress
 from rich.console import Console
 from rich.prompt import Prompt
 
 from menderbot.llm import get_response, INSTRUCTIONS
+# from menderbot.doc import document_file
+from menderbot.git_client import git_diff_head, git_commit
+
 
 console = Console()
 
@@ -27,10 +32,11 @@ def cli(debug, dry):
     You can try using --help at the top level and also for
     specific subcommands.
 
-    Please provide OPENAI_API_KEY as an environment variable.
+    Connects to OpenAI using OPENAI_API_KEY environment variable.
     """
     # print(f"Debug mode is {'on' if debug else 'off'}")
-    pass
+    if not "OPENAI_API_KEY" in os.environ:
+        console.log("OPENAI_API_KEY not found in env, will not be able to connect.")
 
 
 @cli.command()
@@ -66,10 +72,11 @@ def chat():
             console.print(f"[cyan]Bot[/cyan]: {response}")
 
 
-@cli.command()
-def doc():
-    """Generate documentation for the existing code."""
-    print("TODO")
+# @cli.command()
+# @click.argument("file")
+# def doc(file):
+#     """Generate documentation for the existing code."""
+#     document_file(file, dry_run=False, write=True)
 
 
 @cli.command()
@@ -78,16 +85,62 @@ def review():
     print("TODO")
 
 
+
+def change_list_prompt(diff):
+    return f"""
+- Summarize the diff into markdown hyphen-bulleted list of changes.
+- Use present tense verbs like "Add/Update", not "Added/Updated".
+- Do not mention trivial changes like imports that support other changes.
+
+# BEGIN DIFF
+{diff}
+# END DIFF
+"""
+
+def commit_msg_prompt(change_list_text):
+    return f"""
+From this list of changes, write a brief commit message.
+- Sart with a one line summary, guessing the specific intent behind the changes including the names of any updated features. 
+- Include a condensed version of the input change list formatted as a markdown list with hyphen "-" bullets. 
+- Only output the new commit message, not any further conversation.
+- Omit from the list trivial changes like imports
+- Do not refer to anything that changes behavior as a "refactor"
+
+# BEGIN CHANGES
+{change_list_text}
+# END CHANGES
+"""
+
 @cli.command()
 def commit():
     """Generate an informative commit message based on a changeset."""
-    print("TODO")
+    diff = git_diff_head(staged=True)
+    new_question = change_list_prompt(diff)
+    with Progress(transient=True) as progress:
+        task = progress.add_task("[green]Processing...", total=None)
+        response_1 = get_response(INSTRUCTIONS, [], new_question)
+        progress.update(task, completed=True)
+    console.print(f"[cyan]Bot (initial pass)[/cyan]:\n{response_1}")
+    
+    question_2 = commit_msg_prompt(response_1)
+    with Progress(transient=True) as progress:
+        task = progress.add_task("[green]Processing...", total=None)
+        response_2 = get_response(INSTRUCTIONS, [], question_2)
+        progress.update(task, completed=True)
+    console.print(f"[cyan]Bot[/cyan]:\n{response_2}")
+    git_commit(response_2)
 
 
 @cli.command()
 def diff():
     """Summarize the differences between two versions of a codebase."""
-    print("TODO")
+    diff = git_diff_head()
+    new_question = change_list_prompt(diff)
+    with Progress(transient=True) as progress:
+        task = progress.add_task("[green]Processing...", total=None)
+        response_1 = get_response(INSTRUCTIONS, [], new_question)
+        progress.update(task, completed=True)
+    console.print(f"[cyan]Bot[/cyan]:\n{response_1}")
 
 
 if __name__ == "__main__":

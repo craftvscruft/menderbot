@@ -38,7 +38,7 @@ def get_response(instructions, previous_questions_and_answers, new_question):
     messages.append({"role": "user", "content": new_question})
 
     completion = openai.ChatCompletion.create(
-        model="gpt-3.5-turbo",
+        model="gpt-4",
         messages=messages,
         temperature=TEMPERATURE,
         max_tokens=MAX_TOKENS,
