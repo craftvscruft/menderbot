@@ -28,4 +28,6 @@ python -m menderbot
 
 ```
 black menderbot
+pylint --errors-only menderbot
+pytest
 ```
