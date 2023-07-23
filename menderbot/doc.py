@@ -1,18 +1,20 @@
-import itertools
+import os
+import abc
 import logging
 from pathlib import Path
 
-from dataclasses import dataclass
-import tempfile
 from typing import Iterable
 import tiktoken
-from charset_normalizer import from_path
 import openai
 
 from tree_sitter import Language, Parser
 
+from menderbot.source_file import SourceFile, Insertion
+
 CPP_LANGUAGE = Language("build/my-languages.so", "cpp")
-logger = logging.getLogger("gpt_autodoc")
+PY_LANGUAGE = Language("build/my-languages.so", "python")
+
+logger = logging.getLogger("doc")
 
 
 def init_logging():
@@ -22,69 +24,7 @@ def init_logging():
     stream_handler.setLevel(logging.INFO)
     logger.addHandler(stream_handler)
 
-
-class GptClient:
-    def __init__(self, model_name, dry_run: bool):
-        self.model_name = model_name
-        self.encoding = tiktoken.encoding_for_model(self.model_name)
-        self.dry_run = dry_run
-
-    def fetch_completion(self, user_prompt):
-        logger.debug("### Prompt:\n%s\n###", user_prompt)
-        if self.dry_run:
-            return "Dummy dry run response"
-        response = openai.ChatCompletion.create(
-            model=self.model_name,
-            messages=[
-                {"role": "system", "content": "You are a helpful assistant."},
-                {"role": "user", "content": user_prompt},
-            ],
-            temperature=0,
-        )
-        response_content = response["choices"][0]["message"]["content"]
-        logger.debug("### Response:\n%s\n###", response_content)
-        return response_content
-
-    def is_within_token_limit(self, text, token_limit):
-        num_tokens = len(self.encoding.encode(text))
-        logger.debug("Num tokens %s", num_tokens)
-        return num_tokens <= token_limit
-
-
-def chunk_text(string, num_chunks):
-    chunk_size = len(string) // num_chunks
-    return [string[i : i + chunk_size] for i in range(0, len(string), chunk_size)]
-
-
-class DocGen:
-    def __init__(self, gpt_client: GptClient):
-        self.gpt_client = gpt_client
-
-    def generate_doc(self, code, token_limit):
-        user_prompt = f"Write a detailed Doxygen style comment for this C++ code. Respond with comment only, no code.\nCODE:\n{code}"
-        if not self.gpt_client.is_within_token_limit(user_prompt, token_limit):
-            # TODO: Increase model size
-            return None
-        return self.gpt_client.fetch_completion(user_prompt)
-
-
-@dataclass
-class Insertion:
-    text: str
-    line_number: int
-
-
-def insert_in_lines(lines: Iterable[str], insertions: Iterable[Insertion]):
-    lines = iter(lines)
-    last_line = 1
-    for insertion in insertions:
-        for line in itertools.islice(lines, insertion.line_number - last_line):
-            yield line
-            last_line += 1
-        yield insertion.text
-        yield "\n"
-    yield from lines
-
+init_logging()
 
 def parse_source_to_tree(source, language):
     parser = Parser()
@@ -93,115 +33,106 @@ def parse_source_to_tree(source, language):
     return parser.parse(source)
 
 
-block_breaking_node_types = ["function_definition", "method_definition"]
+class LanguageStrategy(abc.ABC):
+    @abc.abstractclassmethod
+    def function_has_comment(self, node):
+        pass
+    @abc.abstractclassmethod
+    def parse_source_to_tree(self, source):
+        pass
+    @abc.abstractclassmethod
+    def get_node_declarator_name(self, node):
+        pass
+    @abc.abstractclassmethod
+    def get_function_nodes(self, tree):
+        pass
+
+class PythonLanguageStrategy(LanguageStrategy):
+    def function_has_comment(self, node):
+        """Checks if function has a docstring. Example node:
+        (function_definition name: (identifier) parameters: (parameters) 
+           body: (block (expression_statement 
+             (string string_content: (string_content))) (pass_statement)))
+        """
+        body_node = node.child_by_field_name("body")
+        if body_node and body_node.type == "block":
+            if body_node.child_count > 0 and body_node.children[0].type == "expression_statement":
+                expression_statement_node = body_node.children[0]
+                if expression_statement_node.child_count > 0:
+                    return expression_statement_node.children[0].type == "string"
+        return False
+
+    def parse_source_to_tree(self, source):
+        return parse_source_to_tree(source, PY_LANGUAGE)
+
+    def get_node_declarator_name(self, node):
+        name_node = node.child_by_field_name("name")
+        return str(name_node.text, encoding="utf-8")
+
+    def get_function_nodes(self, tree):
+        query = PY_LANGUAGE.query("""
+        (function_definition name: (identifier)) @function
+        """)
+        captures = query.captures(tree.root_node)
+        return [capture[0] for capture in captures]
+
+    function_doc_line_offset = 1
 
 
-def get_node_declarator_name(node):
-    declarator_node = node.child_by_field_name("declarator")
-    while declarator_node.child_by_field_name("declarator"):
-        declarator_node = declarator_node.child_by_field_name("declarator")
-    return str(declarator_node.text, encoding="utf-8")
+class CppLanguageStrategy(LanguageStrategy):
+    def function_has_comment(self, node):
+        return node.prev_sibling.type in ["comment"]
+
+    def parse_source_to_tree(self, source):
+        return parse_source_to_tree(source, CPP_LANGUAGE)
+    
+    def get_node_declarator_name(self, node):
+        declarator_node = node.child_by_field_name("declarator")
+        while declarator_node.child_by_field_name("declarator"):
+            declarator_node = declarator_node.child_by_field_name("declarator")
+        return str(declarator_node.text, encoding="utf-8")
+
+    def get_function_nodes(self, tree):
+        query = CPP_LANGUAGE.query("""
+        [
+            (function_definition) @function
+        ]
+        """)
+        captures = query.captures(tree.root_node)
+        return [capture[0] for capture in captures]
+
+    function_doc_line_offset = 0
 
 
-def function_nodes(tree):
-    cursor = tree.walk()
-    if cursor.node.type == "translation_unit":
-        cursor.goto_first_child()
-    has_next = True
-    while has_next:
-        if cursor.node.type in block_breaking_node_types:
-            yield cursor.node
-        has_next = cursor.goto_next_sibling()
+LANGUAGE_STRATEGIES = {
+    ".py": PythonLanguageStrategy(),
+    ".c": CppLanguageStrategy(),
+    ".cpp": CppLanguageStrategy()
+}
 
-
-class SourceFile:
-    def __init__(self, path: str):
-        self.path = path
-        self.encoding = None
-
-    def load_source_as_utf8(self):
-        loaded = from_path(self.path)
-        best_guess = loaded.best()
-        self.encoding = best_guess.encoding
-        return best_guess.output(encoding="utf_8")
-
-    def is_unicode(self):
-        return self.encoding.startswith("utf")
-
-    def update_file(self, insertions: Iterable[Insertion], suffix):
-        source_file = Path(self.path)
-        with source_file.open("r", encoding=self.encoding) as filehandle:
-            new_lines = list(insert_in_lines(lines=filehandle, insertions=insertions))
-            out_file = source_file.with_suffix(f"{source_file.suffix}{suffix}")
-            logger.info("Writing updates to %s", out_file)
-            self._write_result(new_lines, out_file)
-
-    def _write_result(self, lines, output_file: Path):
-        with tempfile.TemporaryDirectory() as tempdir:
-            my_tempfile: Path = Path(tempdir) / "output.txt"
-            with my_tempfile.open("w") as filehandle:
-                for line in lines:
-                    filehandle.write(line)
-            my_tempfile.replace(output_file)
-
-
-def document_file(path, dry_run: bool, max_changes, write):
-    gpt_client = GptClient(model_name="gpt-3.5-turbo", dry_run=dry_run)
-    doc_gen = DocGen(gpt_client=gpt_client)
-    source_file = SourceFile(path)
+def document_file(source_file:SourceFile, doc_gen):
+    path = source_file.path
     logger.info('Processing "%s"...', path)
+    _, file_extension = os.path.splitext(path)
+    language_strategy = LANGUAGE_STRATEGIES.get(file_extension)
+    if not language_strategy:
+        logger.info('Unrecognized extension "%s", skipping.', file_extension)
+        return
+    
     source = source_file.load_source_as_utf8()
-    tree = parse_source_to_tree(source, CPP_LANGUAGE)
+    tree = language_strategy.parse_source_to_tree(source)
     insertions = []
-    token_limit = 3300
-    for node in function_nodes(tree):
-        if len(insertions) >= max_changes:
-            break
-        name = get_node_declarator_name(node)
-        start_line = node.start_point[0] + 1
-        comment_node_types = ["comment"]
-        has_comment = node.prev_sibling.type in comment_node_types
-        if has_comment:
-            logger.debug("%s %s has comment, skipping.", name, start_line)
-        else:
+    for node in language_strategy.get_function_nodes(tree):
+        if not language_strategy.function_has_comment(node):
+            name = language_strategy.get_node_declarator_name(node)
+            logger.info('Found undocumented function "%s"', name)
             code = str(node.text, encoding="utf-8")
-            doc = doc_gen.generate_doc(code, token_limit=token_limit)
-            if doc:
-                # Sometimes GPT will insert the signature after the comment, trim after */
-                # TODO: make more robust by invoking the parser
-                logger.info("  %s %s autogen doc:\n%s\n", name, start_line, doc)
-                if "*/" in doc:
-                    doc = doc[0 : doc.rfind("*/") + 2]
-                    insertions.append(Insertion(text=doc, line_number=start_line))
-                elif not dry_run:
-                    logger.warning(
-                        "  %s %s produced invalid comment, disgarding\n",
-                        name,
-                        start_line,
-                    )
-            else:
-                logger.warning("No doc generated for %s %s", name, start_line)
-    if len(insertions) > 0 and not dry_run and write:
-        if source_file.is_unicode():
-            source_file.update_file(insertions)
-        else:
-            logger.error(
-                "Cannot update '%s', please normalize charset to UTF8, e.g.\nnormalizer -r -n '%s'",
-                path,
-                path,
-            )
+            comment = doc_gen(code, file_extension)
+            function_start_line = node.start_point[0] + 1
+            doc_start_line = function_start_line + language_strategy.function_doc_line_offset
+            if comment:
+                logger.info('Documenting with: %s', comment)
+                logger.info('For code: %s', code)
+                insertions.append(Insertion(text=comment, line_number=doc_start_line, label=name))
+    return insertions
 
-
-# if __name__ == "__main__":
-#     init_logging()
-#     args = create_arg_parser().parse_args()
-#     if args.log:
-#         fh = logging.FileHandler("gpt_autodoc.log")
-#         fh.setLevel(logging.DEBUG)
-#         logger.addHandler(fh)
-#     if not "OPENAI_API_KEY" in os.environ:
-#         logger.warning("OPENAI_API_KEY not found in env, will not be able to connect.")
-#     for input_path in args.paths:
-#         files = glob.iglob(input_path)
-#         for file in files:
-#             process_file(file, dry_run=args.dry, max_changes=5, write=args.write, suffix=".autodoc", target_name=args.name)
