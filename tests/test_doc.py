@@ -1,13 +1,19 @@
 import pytest
 from tree_sitter import Language, Parser
-from menderbot.doc import parse_source_to_tree, PythonLanguageStrategy, CppLanguageStrategy
+from menderbot.doc import (
+    parse_source_to_tree,
+    PythonLanguageStrategy,
+    CppLanguageStrategy,
+)
 
 PY_LANGUAGE = Language("build/my-languages.so", "python")
 CPP_LANGUAGE = Language("build/my-languages.so", "cpp")
 
+
 def parse_string_to_tree(str, lang):
-    source_bytes = bytes(str, 'utf-8')
+    source_bytes = bytes(str, "utf-8")
     return parse_source_to_tree(source_bytes, lang)
+
 
 @pytest.fixture
 def sample_python_tree():
@@ -20,6 +26,7 @@ def bar():
 """
     return parse_string_to_tree(source, PY_LANGUAGE)
 
+
 @pytest.fixture
 def sample_cpp_tree():
     source = """
@@ -29,16 +36,19 @@ int main() {
    return 0;
 }
 """
-    source_bytes = bytes(source, 'utf-8')
+    source_bytes = bytes(source, "utf-8")
     return parse_source_to_tree(source_bytes, CPP_LANGUAGE)
+
 
 @pytest.fixture
 def py_strat():
     return PythonLanguageStrategy()
 
+
 @pytest.fixture
 def cpp_strat():
     return CppLanguageStrategy()
+
 
 def test_function_nodes_with_python(sample_python_tree, py_strat):
     result = py_strat.get_function_nodes(sample_python_tree)
@@ -46,6 +56,7 @@ def test_function_nodes_with_python(sample_python_tree, py_strat):
     assert len(result) == 2
     assert result[0].type == "function_definition"
     assert result[1].type == "function_definition"
+
 
 def test_decorated_function_nodes_with_python(py_strat):
     source = """
@@ -63,6 +74,7 @@ def bar(q):
     assert len(result) == 2
     assert result[0].type == "function_definition"
     assert result[1].type == "function_definition"
+
 
 def test_class_function_nodes_with_python(py_strat):
     source = """
@@ -91,6 +103,7 @@ def foo():
     node = strat.get_function_nodes(tree)[0]
     assert not strat.function_has_comment(node)
 
+
 def test_python_function_has_comment_false(py_strat):
     strat = PythonLanguageStrategy()
     source = """
@@ -113,6 +126,7 @@ def foo():
     tree = parse_string_to_tree(source, PY_LANGUAGE)
     node = py_strat.get_function_nodes(tree)[0]
     assert py_strat.get_node_declarator_name(node) == "foo"
+
 
 def test_cpp_function_name(cpp_strat):
     source = """
