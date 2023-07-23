@@ -25,6 +25,7 @@ def insert_in_lines(lines: Iterable[str], insertions: Iterable[Insertion]):
         yield "\n"
     yield from lines
 
+
 class SourceFile:
     def __init__(self, path: str):
         self.path = path
@@ -44,7 +45,9 @@ class SourceFile:
         path_obj = Path(self.path)
         with path_obj.open("r", encoding=self.encoding) as filehandle:
             if self.modified_after_loaded():
-                raise Exception(f"File '{self.path}' was externally modified, try again.")
+                raise Exception(
+                    f"File '{self.path}' was externally modified, try again."
+                )
             new_lines = list(insert_in_lines(lines=filehandle, insertions=insertions))
             out_file = path_obj.with_suffix(f"{path_obj.suffix}{suffix}")
             self._write_result(new_lines, out_file)

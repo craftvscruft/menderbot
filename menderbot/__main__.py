@@ -9,10 +9,11 @@ from rich.prompt import Prompt, Confirm
 from menderbot.llm import get_response, INSTRUCTIONS
 from menderbot.doc import document_file
 from menderbot.git_client import git_diff_head, git_commit
-from menderbot.code import reindent, function_indent 
+from menderbot.code import reindent, function_indent
 from menderbot.source_file import SourceFile
 
 console = Console()
+
 
 @click.group(context_settings=dict(help_option_names=["-h", "--help"]))
 @click.option(
@@ -40,7 +41,8 @@ def cli(ctx, debug, dry):
     if not "OPENAI_API_KEY" in os.environ:
         console.log("OPENAI_API_KEY not found in env, will not be able to connect.")
     ctx.ensure_object(dict)
-    ctx.obj['DRY'] = dry
+    ctx.obj["DRY"] = dry
+
 
 @cli.command()
 @click.argument("q", nargs=-1)
@@ -75,9 +77,8 @@ def chat():
             console.print(f"[cyan]Bot[/cyan]: {response}")
 
 
-
 def generate_doc(code, file_extension):
-    if not file_extension == '.py':
+    if not file_extension == ".py":
         # Until more types are supported.
         return None
     question = f"""
@@ -93,7 +94,7 @@ CODE:
         progress.update(task, completed=True)
         if '"""' in doc:
             doc = doc[0 : doc.rfind('"""') + 3]
-            doc = doc[doc.find('"""'):]
+            doc = doc[doc.find('"""') :]
             indent = function_indent(code)
             doc = reindent(doc, indent)
         return doc
@@ -111,15 +112,14 @@ def doc(ctx, file):
         return
     if not Confirm.ask(f"Write '{file}'?"):
         console.print(f"Skipping.")
-    source_file.update_file(insertions, suffix='')
+    source_file.update_file(insertions, suffix="")
     console.print(f"Done.")
-        
+
 
 @cli.command()
 def review():
     """Review a code block or changeset and provide feedback"""
     print("TODO")
-
 
 
 def change_list_prompt(diff):
@@ -132,6 +132,7 @@ def change_list_prompt(diff):
 {diff}
 # END DIFF
 """
+
 
 def commit_msg_prompt(change_list_text):
     return f"""
@@ -147,6 +148,7 @@ From this list of changes, write a brief commit message.
 # END CHANGES
 """
 
+
 @cli.command()
 def commit():
     """Generate an informative commit message based on a changeset."""
@@ -157,7 +159,7 @@ def commit():
         response_1 = get_response(INSTRUCTIONS, [], new_question)
         progress.update(task, completed=True)
     console.print(f"[cyan]Bot (initial pass)[/cyan]:\n{response_1}")
-    
+
     question_2 = commit_msg_prompt(response_1)
     with Progress(transient=True) as progress:
         task = progress.add_task("[green]Processing...", total=None)
