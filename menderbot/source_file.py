@@ -7,6 +7,10 @@ from pathlib import Path
 from charset_normalizer import from_path
 
 
+class ConcurrentModificationException(Exception):
+    """Raised when trying to write a file that has been modified since last read"""
+
+
 @dataclass
 class Insertion:
     text: str
@@ -45,7 +49,7 @@ class SourceFile:
         path_obj = Path(self.path)
         with path_obj.open("r", encoding=self.encoding) as filehandle:
             if self.modified_after_loaded():
-                raise Exception(
+                raise ConcurrentModificationException(
                     f"File '{self.path}' was externally modified, try again."
                 )
             new_lines = list(insert_in_lines(lines=filehandle, insertions=insertions))

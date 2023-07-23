@@ -16,4 +16,4 @@ def git_commit(message):
         f.write(message)
         f.seek(0)
         args = ["git", "commit", "--allow-empty", "--template", f.name]
-        subprocess.run(args)
+        subprocess.run(args, check=True)

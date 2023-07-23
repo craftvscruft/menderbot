@@ -27,7 +27,7 @@ python -m menderbot
 ### Pre-commit
 
 ```
-black menderbot
-pylint --errors-only menderbot
+black menderbot tests
+pylint --disable=C,R menderbot
 pytest
 ```

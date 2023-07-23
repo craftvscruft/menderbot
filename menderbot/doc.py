@@ -1,11 +1,6 @@
 import os
-import abc
+from abc import abstractmethod, ABC
 import logging
-from pathlib import Path
-
-from typing import Iterable
-import tiktoken
-import openai
 
 from tree_sitter import Language, Parser
 
@@ -35,20 +30,20 @@ def parse_source_to_tree(source, language):
     return parser.parse(source)
 
 
-class LanguageStrategy(abc.ABC):
-    @abc.abstractclassmethod
+class LanguageStrategy(ABC):
+    @abstractmethod
     def function_has_comment(self, node):
         pass
 
-    @abc.abstractclassmethod
+    @abstractmethod
     def parse_source_to_tree(self, source):
         pass
 
-    @abc.abstractclassmethod
+    @abstractmethod
     def get_node_declarator_name(self, node):
         pass
 
-    @abc.abstractclassmethod
+    @abstractmethod
     def get_function_nodes(self, tree):
         pass
 

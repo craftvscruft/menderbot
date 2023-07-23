@@ -1,6 +1,4 @@
-import logging
 import os
-import string
 import rich_click as click
 from rich.progress import Progress
 from rich.console import Console
@@ -37,6 +35,7 @@ def cli(ctx, debug, dry):
 
     Connects to OpenAI using OPENAI_API_KEY environment variable.
     """
+    del debug
     # print(f"Debug mode is {'on' if debug else 'off'}")
     if not "OPENAI_API_KEY" in os.environ:
         console.log("OPENAI_API_KEY not found in env, will not be able to connect.")
@@ -90,20 +89,19 @@ CODE:
 """
     with Progress(transient=True) as progress:
         task = progress.add_task("[green]Processing...", total=None)
-        doc = get_response(INSTRUCTIONS, [], question)
+        doc_text = get_response(INSTRUCTIONS, [], question)
         progress.update(task, completed=True)
-        if '"""' in doc:
-            doc = doc[0 : doc.rfind('"""') + 3]
-            doc = doc[doc.find('"""') :]
+        if '"""' in doc_text:
+            doc_text = doc_text[0 : doc_text.rfind('"""') + 3]
+            doc_text = doc_text[doc_text.find('"""') :]
             indent = function_indent(code)
-            doc = reindent(doc, indent)
+            doc_text = reindent(doc_text, indent)
         return doc
 
 
 @cli.command()
-@click.pass_context
 @click.argument("file")
-def doc(ctx, file):
+def doc(file):
     """Generate documentation for the existing code."""
     source_file = SourceFile(file)
     insertions = document_file(source_file, generate_doc)
@@ -111,9 +109,9 @@ def doc(ctx, file):
         console.print(f"No updates found for '{file}'.")
         return
     if not Confirm.ask(f"Write '{file}'?"):
-        console.print(f"Skipping.")
+        console.print("Skipping.")
     source_file.update_file(insertions, suffix="")
-    console.print(f"Done.")
+    console.print("Done.")
 
 
 @cli.command()
@@ -122,14 +120,14 @@ def review():
     print("TODO")
 
 
-def change_list_prompt(diff):
+def change_list_prompt(diff_text):
     return f"""
 - Summarize the diff into markdown hyphen-bulleted list of changes.
 - Use present tense verbs like "Add/Update", not "Added/Updated".
 - Do not mention trivial changes like imports that support other changes.
 
 # BEGIN DIFF
-{diff}
+{diff_text}
 # END DIFF
 """
 
@@ -152,8 +150,8 @@ From this list of changes, write a brief commit message.
 @cli.command()
 def commit():
     """Generate an informative commit message based on a changeset."""
-    diff = git_diff_head(staged=True)
-    new_question = change_list_prompt(diff)
+    diff_text = git_diff_head(staged=True)
+    new_question = change_list_prompt(diff_text)
     with Progress(transient=True) as progress:
         task = progress.add_task("[green]Processing...", total=None)
         response_1 = get_response(INSTRUCTIONS, [], new_question)
@@ -172,8 +170,8 @@ def commit():
 @cli.command()
 def diff():
     """Summarize the differences between two versions of a codebase."""
-    diff = git_diff_head()
-    new_question = change_list_prompt(diff)
+    diff_text = git_diff_head()
+    new_question = change_list_prompt(diff_text)
     with Progress(transient=True) as progress:
         task = progress.add_task("[green]Processing...", total=None)
         response_1 = get_response(INSTRUCTIONS, [], new_question)
