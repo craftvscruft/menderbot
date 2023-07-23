@@ -15,6 +15,15 @@ PRESENCE_PENALTY = 0.6
 MAX_CONTEXT_QUESTIONS = 10
 
 
+def is_test_override():
+    return os.getenv("OPENAI_API_KEY") == "test-override"
+
+
+def test_override_response(messages):
+    del messages
+    return "<LLM Output>"
+
+
 def get_response(instructions, previous_questions_and_answers, new_question):
     """Get a response from ChatCompletion
 
@@ -37,6 +46,8 @@ def get_response(instructions, previous_questions_and_answers, new_question):
     # add the new question
     messages.append({"role": "user", "content": new_question})
 
+    if is_test_override():
+        return test_override_response(messages)
     completion = openai.ChatCompletion.create(
         model="gpt-4",
         messages=messages,

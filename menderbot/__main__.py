@@ -44,10 +44,10 @@ def cli(ctx, debug, dry):
 
 
 @cli.command()
-@click.argument("q", nargs=-1)
+@click.argument("q", required=False)
 def ask(q):
     """Ask a question about a specific piece of code or concept."""
-    new_question = " ".join(q)
+    new_question = q
     if not new_question:
         new_question = Prompt.ask("[green]Ask")
     with Progress(transient=True) as progress:
