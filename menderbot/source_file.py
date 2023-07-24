@@ -67,7 +67,7 @@ class SourceFile:
     def is_unicode(self):
         return self.encoding.startswith("utf")
 
-    def update_file(self, insertions: Iterable[Insertion], suffix):
+    def update_file(self, insertions: Iterable[Insertion], suffix: str) -> None:
         path_obj = Path(self.path)
         with path_obj.open("r", encoding=self.encoding) as filehandle:
             if self.modified_after_loaded():
@@ -78,7 +78,7 @@ class SourceFile:
             out_file = path_obj.with_suffix(f"{path_obj.suffix}{suffix}")
             self._write_result(new_lines, out_file)
 
-    def _write_result(self, lines, output_file: Path):
+    def _write_result(self, lines: list, output_file: Path) -> None:
         with tempfile.TemporaryDirectory() as tempdir:
             my_tempfile: Path = Path(tempdir) / "output.txt"
             with my_tempfile.open("w") as filehandle:
@@ -86,5 +86,5 @@ class SourceFile:
                     filehandle.write(line)
             my_tempfile.replace(output_file)
 
-    def modified_after_loaded(self):
+    def modified_after_loaded(self) -> bool:
         return os.path.getmtime(self.path) > self._initial_modified_time

@@ -6,11 +6,11 @@ from menderbot.source_file import Insertion, SourceFile
 logger = logging.getLogger("typing")
 
 
-def node_str(node):
+def node_str(node) -> str:
     return str(node.text, encoding="utf-8")
 
 
-def add_type_hints(function_node, hints):
+def add_type_hints(function_node, hints: list) -> list:
     function_name = node_str(function_node.child_by_field_name("name"))
     params_node = function_node.child_by_field_name("parameters")
     return_type_node = function_node.child_by_field_name("return_type")

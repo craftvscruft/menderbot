@@ -2,7 +2,7 @@ import subprocess
 import tempfile
 
 
-def git_diff_head(staged=False):
+def git_diff_head(staged=False) -> str:
     staged_arg = []
     if staged:
         staged_arg = ["--staged"]
@@ -10,7 +10,7 @@ def git_diff_head(staged=False):
     return subprocess.check_output(args, text=True)
 
 
-def git_commit(message):
+def git_commit(message: str) -> None:
     """Invoke git commit, allowing user to edit"""
     with tempfile.NamedTemporaryFile(mode="w+t", delete=True) as f:
         f.write(message)
