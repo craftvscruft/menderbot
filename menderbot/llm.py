@@ -15,16 +15,18 @@ PRESENCE_PENALTY = 0.6
 MAX_CONTEXT_QUESTIONS = 10
 
 
-def is_test_override():
+def is_test_override() -> bool:
     return os.getenv("OPENAI_API_KEY") == "test-override"
 
 
-def test_override_response(messages):
+def test_override_response(messages) -> str:
     del messages
     return "<LLM Output>"
 
 
-def get_response(instructions, previous_questions_and_answers, new_question):
+def get_response(
+    instructions: str, previous_questions_and_answers: list, new_question: str
+) -> str:
     """Get a response from ChatCompletion
 
     Args:
