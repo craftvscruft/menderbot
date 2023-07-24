@@ -5,7 +5,8 @@ from rich.console import Console
 from rich.prompt import Prompt, Confirm
 
 from menderbot.llm import get_response, INSTRUCTIONS
-from menderbot.doc import document_file, show_untyped_functions
+from menderbot.doc import document_file
+from menderbot.typing import process_untyped_functions
 from menderbot.git_client import git_diff_head, git_commit
 from menderbot.code import reindent, function_indent
 from menderbot.source_file import SourceFile
@@ -104,14 +105,15 @@ Output:
 def handle_untyped_function(function_text, needs_typing):
     prompt = type_prompt(function_text, needs_typing)
     answer = get_response_with_progress(INSTRUCTIONS, [], prompt)
-    console.print(f"[cyan]Bot[/cyan]:\n{answer}")
+    console.print(f"[cyan]Bot[/cyan]:\n{answer}\n")
 
 
 @cli.command("type")
 @click.argument("file")
 def type_command(file):
+    """Suggest type hints (Python only)"""
     source_file = SourceFile(file)
-    show_untyped_functions(source_file, handle_untyped_function)
+    process_untyped_functions(source_file, handle_untyped_function)
 
 
 def get_response_with_progress(instructions, history, question):
@@ -142,7 +144,7 @@ CODE:
             doc_text = doc_text[doc_text.find('"""') :]
             indent = function_indent(code)
             doc_text = reindent(doc_text, indent)
-        return doc
+        return doc_text
 
 
 @cli.command()
