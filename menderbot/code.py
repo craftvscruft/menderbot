@@ -14,7 +14,7 @@ def function_indent(code):
     return line_indent(second_line)
 
 
-def reindent(text, indent):
+def reindent(text: str, indent):
     lines = text.split("\n")
     indented_lines = [indent + line.lstrip() for line in lines]
     return "\n".join(indented_lines)

@@ -5,7 +5,7 @@ from rich.console import Console
 from rich.prompt import Prompt, Confirm
 
 from menderbot.llm import get_response, INSTRUCTIONS
-from menderbot.doc import document_file
+from menderbot.doc import document_file, show_untyped_functions
 from menderbot.git_client import git_diff_head, git_commit
 from menderbot.code import reindent, function_indent
 from menderbot.source_file import SourceFile
@@ -76,6 +76,52 @@ def chat():
             console.print(f"[cyan]Bot[/cyan]: {response}")
 
 
+def type_prompt(function_text, needs_typing):
+    needs_typing_text = ",".join(needs_typing)
+    return f"""
+Please infer these missing Python type hints. 
+If you cannot determine the type with confidence, use 'any'. 
+Do not assume the existence any unreferenced classes outside the standard library.
+
+Input:
+def foo(a, b: int):
+  return a + b
+
+Infer: a, return
+Output:
+a: int
+return: int
+
+Input:
+{function_text}
+
+
+Infer: {needs_typing_text}
+Output:
+"""
+
+
+def handle_untyped_function(function_text, needs_typing):
+    prompt = type_prompt(function_text, needs_typing)
+    answer = get_response_with_progress(INSTRUCTIONS, [], prompt)
+    console.print(f"[cyan]Bot[/cyan]:\n{answer}")
+
+
+@cli.command("type")
+@click.argument("file")
+def type_command(file):
+    source_file = SourceFile(file)
+    show_untyped_functions(source_file, handle_untyped_function)
+
+
+def get_response_with_progress(instructions, history, question):
+    with Progress(transient=True) as progress:
+        task = progress.add_task("[green]Processing...", total=None)
+        answer = get_response(instructions, history, question)
+        progress.update(task, completed=True)
+        return answer
+
+
 def generate_doc(code, file_extension):
     if not file_extension == ".py":
         # Until more types are supported.
@@ -118,7 +164,7 @@ def doc(file):
 def review():
     """Review a code block or changeset and provide feedback"""
     console.print("Reading diff from STDIN...")
-    diff_text = click.get_text_stream('stdin').read()
+    diff_text = click.get_text_stream("stdin").read()
     new_question = code_review_prompt(diff_text)
     with Progress(transient=True) as progress:
         task = progress.add_task("[green]Processing...", total=None)
@@ -137,6 +183,7 @@ def change_list_prompt(diff_text):
 {diff_text}
 # END DIFF
 """
+
 
 def code_review_prompt(diff_text):
     return f"""
@@ -187,7 +234,7 @@ def commit():
 def diff():
     """Summarize the differences between two versions of a codebase."""
     console.print("Reading diff from STDIN...")
-    diff_text = click.get_text_stream('stdin').read()
+    diff_text = click.get_text_stream("stdin").read()
     new_question = change_list_prompt(diff_text)
     with Progress(transient=True) as progress:
         task = progress.add_task("[green]Processing...", total=None)

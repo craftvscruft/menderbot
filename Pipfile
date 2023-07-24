@@ -10,12 +10,17 @@ openai = "*"
 tree-sitter = "*"
 charset-normalizer = "*"
 tiktoken = "*"
+types-tree-sitter = "*"
 
 [dev-packages]
 black = "*"
 pytest = "*"
 pylint = "*"
+mypy = "*"
 
 [requires]
 python_version = "3.9"
 python_full_version = "3.9.16"
+
+[scripts]
+menderbot = "python -m menderbot"

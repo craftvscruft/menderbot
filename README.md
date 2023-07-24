@@ -9,9 +9,7 @@ AI-powered command line tool for working with legacy code. Based on the principl
 * `menderbot diff`: Summarize the differences between two versions of a codebase
 * `menderbot doc`: Generate documentation for the existing code (Python only)
 * `menderbot review`: Review a code block or changeset and provide feedback
-
-## Commands (coming soon):
-* `menderbot type`: Add type hints.
+* `menderbot type`: Suggest type hints
 
 
 ## Developing
@@ -36,4 +34,5 @@ alias menderbot="pipenv run python -m menderbot"
 black menderbot tests
 pylint --disable=C,R menderbot
 pytest
+mypy
 ```
