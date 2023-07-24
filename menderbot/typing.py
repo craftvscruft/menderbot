@@ -63,6 +63,7 @@ def process_untyped_functions(source_file: SourceFile):
         needs_typing = [
             node_str(n) for n in params_node.children if n.type in ["identifier"]
         ]
+        needs_typing = [n for n in needs_typing if n != "self"]
         # Add "default_parameter" later probably.
         return_type_text = ""
         if return_type_node:

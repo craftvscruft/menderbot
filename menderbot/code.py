@@ -5,16 +5,16 @@ CPP_LANGUAGE = Language("build/my-languages.so", "cpp")
 PY_LANGUAGE = Language("build/my-languages.so", "python")
 
 
-def node_str(node):
+def node_str(node) -> str:
     return str(node.text, encoding="utf-8")
 
 
-def line_indent(line):
+def line_indent(line: str) -> str:
     count = len(line) - len(line.lstrip())
     return line[:count]
 
 
-def function_indent(code):
+def function_indent(code: str) -> str:
     second_line_start = code.find("\n") + 1
     no_first_line = code[second_line_start:]
     if no_first_line.find("\n") > -1:
@@ -25,7 +25,7 @@ def function_indent(code):
     return line_indent(second_line)
 
 
-def reindent(text: str, indent):
+def reindent(text: str, indent: str) -> str:
     lines = text.split("\n")
     indented_lines = [indent + line.lstrip() for line in lines]
     return "\n".join(indented_lines)
@@ -44,7 +44,7 @@ class LanguageStrategy(ABC):
         pass
 
     @abstractmethod
-    def parse_source_to_tree(self, source):
+    def parse_source_to_tree(self, source: str) -> None:
         pass
 
     @abstractmethod
@@ -62,7 +62,7 @@ class LanguageStrategy(ABC):
 
 
 class PythonLanguageStrategy(LanguageStrategy):
-    def function_has_comment(self, node):
+    def function_has_comment(self, node) -> bool:
         """Checks if function has a docstring. Example node:
         (function_definition name: (identifier) parameters: (parameters)
            body: (block (expression_statement
@@ -79,14 +79,14 @@ class PythonLanguageStrategy(LanguageStrategy):
                     return expression_statement_node.children[0].type == "string"
         return False
 
-    def parse_source_to_tree(self, source):
+    def parse_source_to_tree(self, source: str):
         return parse_source_to_tree(source, PY_LANGUAGE)
 
-    def get_node_declarator_name(self, node):
+    def get_node_declarator_name(self, node) -> str:
         name_node = node.child_by_field_name("name")
         return str(name_node.text, encoding="utf-8")
 
-    def get_function_nodes(self, tree):
+    def get_function_nodes(self, tree) -> list:
         query = PY_LANGUAGE.query(
             """
         (function_definition name: (identifier)) @function
@@ -99,19 +99,19 @@ class PythonLanguageStrategy(LanguageStrategy):
 
 
 class CppLanguageStrategy(LanguageStrategy):
-    def function_has_comment(self, node):
+    def function_has_comment(self, node) -> bool:
         return node.prev_sibling.type in ["comment"]
 
-    def parse_source_to_tree(self, source):
+    def parse_source_to_tree(self, source: str):
         return parse_source_to_tree(source, CPP_LANGUAGE)
 
-    def get_node_declarator_name(self, node):
+    def get_node_declarator_name(self, node) -> str:
         declarator_node = node.child_by_field_name("declarator")
         while declarator_node.child_by_field_name("declarator"):
             declarator_node = declarator_node.child_by_field_name("declarator")
         return str(declarator_node.text, encoding="utf-8")
 
-    def get_function_nodes(self, tree):
+    def get_function_nodes(self, tree) -> list:
         query = CPP_LANGUAGE.query(
             """
         [

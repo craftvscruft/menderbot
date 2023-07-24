@@ -84,6 +84,7 @@ def type_prompt(function_text, needs_typing, previous_error=""):
 Please infer these missing Python type hints. 
 If you cannot determine the type with confidence, use 'any'. 
 Do not assume the existence any unreferenced classes outside the standard library.
+The lowercase built-in types available include: int, str, list, set, dict, tuple. 
 
 Input:
 def foo(a, b: int):
@@ -112,22 +113,15 @@ def parse_type_hint_answer(text):
 
     lines = text.strip().splitlines()
     hints = [line_to_tuple(line) for line in lines if ":" in line]
-    return [hint for hint in hints if hint[1].lower() != "any"]
+    return [hint for hint in hints if hint[0] != "self" and hint[1].lower() != "any"]
 
 
 @cli.command("type")
 @click.argument("file")
-@click.option(
-    "--check",
-    is_flag=True,
-    default=False,
-    help="Run type-checker to validate results (mypy)",
-)
-def type_command(file, check):
+def type_command(file):
     """Insert type hints (Python only)"""
-
     console.print("Running type-checker baseline")
-    (success, check_output) = run_check(f"mypy {file}")
+    (success, check_output) = run_check("mypy")
     if not success:
         console.print(check_output)
         console.print("Baseline failed, aborting.")
@@ -142,16 +136,21 @@ def type_command(file, check):
         console.print(f"[cyan]Bot[/cyan]:\n{answer}\n")
         hints = parse_type_hint_answer(answer)
         insertions_for_function = add_type_hints(function_node, hints)
-        source_file.update_file(insertions_for_function, suffix=".shadow")
-        (success, check_output) = run_check(
-            f"mypy --shadow-file {file} {file}.shadow {file}"
-        )
-        if success:
-            console.print("Type checker passed, saving\n")
-            insertions += insertions_for_function
+        if insertions_for_function:
+            source_file.update_file(insertions_for_function, suffix=".shadow")
+            (success, check_output) = run_check(
+                f"mypy --shadow-file {file} {file}.shadow"
+            )
+            if success:
+                console.print("[green]Type checker passed[/green], saving\n")
+                insertions += insertions_for_function
+            else:
+                console.print("[red]Type checker failed[/red], discarding\n")
         else:
-            console.print("Type checker failed, discarding\n")
-
+            console.print("No changes\n")
+    if not insertions:
+        console.print(f"No changes for '{file}.")
+        return
     if not Confirm.ask(f"Write '{file}'?"):
         console.print("Skipping.")
         return
