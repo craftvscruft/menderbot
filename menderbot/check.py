@@ -1,7 +1,7 @@
 import subprocess
 
 
-def run_check(command):
+def run_check(command: str) -> tuple[bool, str]:
     try:
         return (
             True,

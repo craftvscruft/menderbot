@@ -1,6 +1,6 @@
 import os
 import logging
-
+from typing import Callable
 from menderbot.code import LANGUAGE_STRATEGIES
 
 from menderbot.source_file import SourceFile, Insertion
@@ -8,7 +8,7 @@ from menderbot.source_file import SourceFile, Insertion
 logger = logging.getLogger("doc")
 
 
-def init_logging():
+def init_logging() -> None:
     logger.setLevel(logging.DEBUG)
     # create console handler with a higher log level
     stream_handler = logging.StreamHandler()
@@ -19,14 +19,14 @@ def init_logging():
 init_logging()
 
 
-def document_file(source_file: SourceFile, doc_gen):
+def document_file(source_file: SourceFile, doc_gen: Callable) -> list[Insertion]:
     path = source_file.path
     logger.info('Processing "%s"...', path)
     _, file_extension = os.path.splitext(path)
     language_strategy = LANGUAGE_STRATEGIES.get(file_extension)
     if not language_strategy:
         logger.info('Unrecognized extension "%s", skipping.', file_extension)
-        return
+        return []
 
     source = source_file.load_source_as_utf8()
     tree = language_strategy.parse_source_to_tree(source)

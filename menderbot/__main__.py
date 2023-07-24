@@ -1,4 +1,5 @@
 import os
+import re
 from menderbot.check import run_check
 import rich_click as click
 from rich.progress import Progress
@@ -119,6 +120,7 @@ Output:
 def parse_type_hint_answer(text):
     def line_to_tuple(line):
         [ident, new_type] = line.split(":")
+        new_type = re.sub(r"\bList\b", "list", new_type)
         return (ident.strip(), new_type.strip())
 
     lines = text.strip().splitlines()
@@ -144,10 +146,10 @@ def try_function_type_hints(source_file, function_node, function_text, needs_typ
         if try_num > 0:
             console.print("Retrying")
         prompt = type_prompt(function_text, needs_typing, previous_error=check_output)
-        console.print(f"[cyan]Prompt[/cyan]:\n{prompt}\n")
+        # console.print(f"[cyan]Prompt[/cyan]:\n{prompt}\n")
         answer = get_response_with_progress(INSTRUCTIONS, [], prompt)
-        console.print(f"[cyan]Bot[/cyan]:\n{answer}\n")
         hints = parse_type_hint_answer(answer)
+        console.print(f"[cyan]Bot[/cyan]:\n{hints}\n")
         insertions_for_function = add_type_hints(function_node, hints)
         if insertions_for_function:
             source_file.update_file(insertions_for_function, suffix=".shadow")
