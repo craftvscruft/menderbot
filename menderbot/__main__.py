@@ -102,10 +102,21 @@ Output:
 """
 
 
+def parse_type_hint_answer(text):
+    def line_to_tuple(line):
+        [ident, new_type] = line.split(":")
+        return (ident.strip(), new_type.strip())
+
+    lines = text.strip().splitlines()
+    hints = [line_to_tuple(line) for line in lines if ":" in line]
+    return [hint for hint in hints if hint[1].lower() != "any"]
+
+
 def handle_untyped_function(function_text, needs_typing):
     prompt = type_prompt(function_text, needs_typing)
     answer = get_response_with_progress(INSTRUCTIONS, [], prompt)
     console.print(f"[cyan]Bot[/cyan]:\n{answer}\n")
+    return parse_type_hint_answer(answer)
 
 
 @cli.command("type")
@@ -113,7 +124,12 @@ def handle_untyped_function(function_text, needs_typing):
 def type_command(file):
     """Suggest type hints (Python only)"""
     source_file = SourceFile(file)
-    process_untyped_functions(source_file, handle_untyped_function)
+    insertions = process_untyped_functions(source_file, handle_untyped_function)
+    if not Confirm.ask(f"Write '{file}'?"):
+        console.print("Skipping.")
+        return
+    source_file.update_file(insertions, suffix="")
+    console.print("Done.")
 
 
 def get_response_with_progress(instructions, history, question):
@@ -158,6 +174,7 @@ def doc(file):
         return
     if not Confirm.ask(f"Write '{file}'?"):
         console.print("Skipping.")
+        return
     source_file.update_file(insertions, suffix="")
     console.print("Done.")
 
