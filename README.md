@@ -7,11 +7,12 @@ AI-powered command line tool for working with legacy code. Based on the principl
 * `menderbot chat`: Interactively chat in the context of the current directory
 * `menderbot commit`: Generate an informative commit message based on a changeset
 * `menderbot diff`: Summarize the differences between two versions of a codebase
+* `menderbot doc`: Generate documentation for the existing code (Python only)
+* `menderbot review`: Review a code block or changeset and provide feedback
 
 ## Commands (coming soon):
+* `menderbot type`: Add type hints.
 
-* `menderbot doc`: Generate documentation for the existing code
-* `menderbot review`: Review a code block or changeset and provide feedback
 
 ## Developing
 
@@ -23,6 +24,11 @@ python -m menderbot.build_treesitter
 ### Running
 ```
 python -m menderbot
+```
+
+To save typing, consider something like:
+```
+alias menderbot="pipenv run python -m menderbot"
 ```
 ### Pre-commit
 

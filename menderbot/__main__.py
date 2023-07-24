@@ -117,7 +117,14 @@ def doc(file):
 @cli.command()
 def review():
     """Review a code block or changeset and provide feedback"""
-    print("TODO")
+    console.print("Reading diff from STDIN...")
+    diff_text = click.get_text_stream('stdin').read()
+    new_question = code_review_prompt(diff_text)
+    with Progress(transient=True) as progress:
+        task = progress.add_task("[green]Processing...", total=None)
+        response_1 = get_response(INSTRUCTIONS, [], new_question)
+        progress.update(task, completed=True)
+    console.print(f"[cyan]Bot[/cyan]:\n{response_1}")
 
 
 def change_list_prompt(diff_text):
@@ -125,6 +132,15 @@ def change_list_prompt(diff_text):
 - Summarize the diff into markdown hyphen-bulleted list of changes.
 - Use present tense verbs like "Add/Update", not "Added/Updated".
 - Do not mention trivial changes like imports that support other changes.
+
+# BEGIN DIFF
+{diff_text}
+# END DIFF
+"""
+
+def code_review_prompt(diff_text):
+    return f"""
+Act as an expert Software Engineer. Give a code review for this diff.
 
 # BEGIN DIFF
 {diff_text}
@@ -170,7 +186,8 @@ def commit():
 @cli.command()
 def diff():
     """Summarize the differences between two versions of a codebase."""
-    diff_text = git_diff_head()
+    console.print("Reading diff from STDIN...")
+    diff_text = click.get_text_stream('stdin').read()
     new_question = change_list_prompt(diff_text)
     with Progress(transient=True) as progress:
         task = progress.add_task("[green]Processing...", total=None)
