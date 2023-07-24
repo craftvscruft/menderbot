@@ -75,6 +75,7 @@ def process_untyped_functions_in_tree(tree, language_strategy):
         elif name != "__init__":
             needs_typing.append("return")
         params = node_str(params_node)
+        print()
         print(f"def {name}{params}{return_type_text}")
 
         if needs_typing:

@@ -31,7 +31,7 @@ def reindent(text: str, indent: str) -> str:
     return "\n".join(indented_lines)
 
 
-def parse_source_to_tree(source, language):
+def parse_source_to_tree(source: bytes, language: Language):
     parser = Parser()
     parser.set_language(language)
 
@@ -44,7 +44,7 @@ class LanguageStrategy(ABC):
         pass
 
     @abstractmethod
-    def parse_source_to_tree(self, source: str) -> None:
+    def parse_source_to_tree(self, source: bytes) -> None:
         pass
 
     @abstractmethod
@@ -52,7 +52,7 @@ class LanguageStrategy(ABC):
         pass
 
     @abstractmethod
-    def get_function_nodes(self, tree):
+    def get_function_nodes(self, tree) -> list:
         pass
 
     @property
@@ -79,7 +79,7 @@ class PythonLanguageStrategy(LanguageStrategy):
                     return expression_statement_node.children[0].type == "string"
         return False
 
-    def parse_source_to_tree(self, source: str):
+    def parse_source_to_tree(self, source: bytes):
         return parse_source_to_tree(source, PY_LANGUAGE)
 
     def get_node_declarator_name(self, node) -> str:
@@ -102,7 +102,7 @@ class CppLanguageStrategy(LanguageStrategy):
     def function_has_comment(self, node) -> bool:
         return node.prev_sibling.type in ["comment"]
 
-    def parse_source_to_tree(self, source: str):
+    def parse_source_to_tree(self, source: bytes):
         return parse_source_to_tree(source, CPP_LANGUAGE)
 
     def get_node_declarator_name(self, node) -> str:

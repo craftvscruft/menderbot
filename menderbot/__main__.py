@@ -129,6 +129,10 @@ def parse_type_hint_answer(text):
 
 
 def try_function_type_hints(source_file, function_node, function_text, needs_typing):
+    mypy_args = "--no-error-summary --soft-error-limit 10"
+    check_command = (
+        f"mypy {mypy_args} --shadow-file {source_file.path} {source_file.path}.shadow"
+    )
     max_tries = 2
     check_output = None
     # First set them all to wrong type, to produce an error message.
@@ -136,9 +140,7 @@ def try_function_type_hints(source_file, function_node, function_text, needs_typ
     insertions_for_function = add_type_hints(function_node, hints)
     if insertions_for_function:
         source_file.update_file(insertions_for_function, suffix=".shadow")
-        (success, pre_check_output) = run_check(
-            f"mypy --shadow-file {source_file.path} {source_file.path}.shadow"
-        )
+        (success, pre_check_output) = run_check(check_command)
         if not success:
             check_output = pre_check_output
             # console.print("Hint", check_output)
@@ -149,20 +151,21 @@ def try_function_type_hints(source_file, function_node, function_text, needs_typ
         # console.print(f"[cyan]Prompt[/cyan]:\n{prompt}\n")
         answer = get_response_with_progress(INSTRUCTIONS, [], prompt)
         hints = parse_type_hint_answer(answer)
-        console.print(f"[cyan]Bot[/cyan]:\n{hints}\n")
+
         insertions_for_function = add_type_hints(function_node, hints)
         if insertions_for_function:
+            console.print(f"[cyan]Bot[/cyan]: {hints}")
             source_file.update_file(insertions_for_function, suffix=".shadow")
-            (success, check_output) = run_check(
-                f"mypy --shadow-file {source_file.path} {source_file.path}.shadow"
-            )
+            (success, check_output) = run_check(check_command)
             if success:
-                console.print("[green]Type checker passed[/green], saving\n")
+                console.print("[green]Type checker passed[/green], keeping")
                 return insertions_for_function
             else:
-                console.print("[red]Type checker failed[/red], discarding\n")
+                console.print("[red]Type checker failed[/red], discarding")
         else:
-            console.print("No changes\n")
+            console.print("[cyan]Bot[/cyan]: No changes")
+            # No retry if it didn't try to hint anything.
+            return []
     return []
 
 
