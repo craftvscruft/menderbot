@@ -1,6 +1,5 @@
 import os
 import logging
-from typing import Any, Callable
 from menderbot.code import PythonLanguageStrategy
 from menderbot.source_file import Insertion, SourceFile
 
@@ -47,9 +46,7 @@ def add_type_hints(function_node, hints):
     return insertions
 
 
-def process_untyped_functions(
-    source_file: SourceFile, handler: Callable[[str, list], Any]
-):
+def process_untyped_functions(source_file: SourceFile):
     path = source_file.path
     logger.info('Processing "%s"...', path)
     _, file_extension = os.path.splitext(path)
@@ -59,7 +56,6 @@ def process_untyped_functions(
     language_strategy = PythonLanguageStrategy()
     source = source_file.load_source_as_utf8()
     tree = language_strategy.parse_source_to_tree(source)
-    insertions = []
     for node in language_strategy.get_function_nodes(tree):
         name = node_str(node.child_by_field_name("name"))
         params_node = node.child_by_field_name("parameters")
@@ -78,8 +74,8 @@ def process_untyped_functions(
 
         if needs_typing:
             function_text = node_str(node)
-            hints = handler(function_text, needs_typing)
-            insertions += add_type_hints(node, hints)
+            # Should make an object
+            yield (node, function_text, needs_typing)
+
         # https://github.com/tree-sitter/tree-sitter-python/blob/master/grammar.js
         # print(node.sexp())
-    return insertions

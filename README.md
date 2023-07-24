@@ -9,7 +9,7 @@ AI-powered command line tool for working with legacy code. Based on the principl
 * `menderbot diff`: Summarize the differences between two versions of a codebase
 * `menderbot doc`: Generate documentation for the existing code (Python only)
 * `menderbot review`: Review a code block or changeset and provide feedback
-* `menderbot type`: Suggest type hints (Python only)
+* `menderbot type`: Insert type hints (Python only)
 
 
 ## Developing

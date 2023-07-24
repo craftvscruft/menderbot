@@ -1,4 +1,5 @@
 import os
+from menderbot.check import run_check
 import rich_click as click
 from rich.progress import Progress
 from rich.console import Console
@@ -6,7 +7,7 @@ from rich.prompt import Prompt, Confirm
 
 from menderbot.llm import get_response, INSTRUCTIONS
 from menderbot.doc import document_file
-from menderbot.typing import process_untyped_functions
+from menderbot.typing import add_type_hints, process_untyped_functions
 from menderbot.git_client import git_diff_head, git_commit
 from menderbot.code import reindent, function_indent
 from menderbot.source_file import SourceFile
@@ -114,19 +115,43 @@ def parse_type_hint_answer(text):
     return [hint for hint in hints if hint[1].lower() != "any"]
 
 
-def handle_untyped_function(function_text, needs_typing):
-    prompt = type_prompt(function_text, needs_typing)
-    answer = get_response_with_progress(INSTRUCTIONS, [], prompt)
-    console.print(f"[cyan]Bot[/cyan]:\n{answer}\n")
-    return parse_type_hint_answer(answer)
-
-
 @cli.command("type")
 @click.argument("file")
-def type_command(file):
-    """Suggest type hints (Python only)"""
+@click.option(
+    "--check",
+    is_flag=True,
+    default=False,
+    help="Run type-checker to validate results (mypy)",
+)
+def type_command(file, check):
+    """Insert type hints (Python only)"""
+
+    console.print("Running type-checker baseline")
+    (success, check_output) = run_check(f"mypy {file}")
+    if not success:
+        console.print(check_output)
+        console.print("Baseline failed, aborting.")
+        return
     source_file = SourceFile(file)
-    insertions = process_untyped_functions(source_file, handle_untyped_function)
+    insertions = []
+    for function_node, function_text, needs_typing in process_untyped_functions(
+        source_file
+    ):
+        prompt = type_prompt(function_text, needs_typing)
+        answer = get_response_with_progress(INSTRUCTIONS, [], prompt)
+        console.print(f"[cyan]Bot[/cyan]:\n{answer}\n")
+        hints = parse_type_hint_answer(answer)
+        insertions_for_function = add_type_hints(function_node, hints)
+        source_file.update_file(insertions_for_function, suffix=".shadow")
+        (success, check_output) = run_check(
+            f"mypy --shadow-file {file} {file}.shadow {file}"
+        )
+        if success:
+            console.print("Type checker passed, saving\n")
+            insertions += insertions_for_function
+        else:
+            console.print("Type checker failed, discarding\n")
+
     if not Confirm.ask(f"Write '{file}'?"):
         console.print("Skipping.")
         return
