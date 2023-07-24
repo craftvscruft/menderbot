@@ -25,7 +25,7 @@ def add_type_hints(function_node, hints):
 
                 insertions.append(
                     Insertion(
-                        text=f" : {new_type}",
+                        text=f": {new_type}",
                         line_number=line,
                         col=col,
                         inline=True,

@@ -25,13 +25,13 @@ def foo(a):
     pass
 """
     code_lines = code.splitlines(True)
-    expected_lines = ["\n", "def foo(a : int) -> None:\n", "    pass\n"]
+    expected_lines = ["\n", "def foo(a: int) -> None:\n", "    pass\n"]
     tree = parse_string_to_tree(
         code,
         PY_LANGUAGE,
     )
     expected = [
-        Insertion(text=" : int", line_number=2, col=9, inline=True, label="foo"),
+        Insertion(text=": int", line_number=2, col=9, inline=True, label="foo"),
         Insertion(text=" -> None", line_number=2, col=10, inline=True, label="foo"),
     ]
     function_nodes = py_strat.get_function_nodes(tree)
@@ -50,7 +50,7 @@ def test_add_type_hints_on_first_line(py_strat):
         PY_LANGUAGE,
     )
     expected = [
-        Insertion(text=" : int", line_number=1, col=9, inline=True, label="foo"),
+        Insertion(text=": int", line_number=1, col=9, inline=True, label="foo"),
         Insertion(text=" -> None", line_number=1, col=10, inline=True, label="foo"),
     ]
     function_nodes = py_strat.get_function_nodes(tree)

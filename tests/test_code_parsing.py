@@ -118,7 +118,6 @@ def foo():
 
 
 def test_python_function_name(py_strat):
-    strat = PythonLanguageStrategy()
     source = """
 def foo():
     \"\"\"Doc string\"\"\"

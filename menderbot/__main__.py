@@ -77,7 +77,7 @@ def chat():
             console.print(f"[cyan]Bot[/cyan]: {response}")
 
 
-def type_prompt(function_text, needs_typing):
+def type_prompt(function_text, needs_typing, previous_error=""):
     needs_typing_text = ",".join(needs_typing)
     return f"""
 Please infer these missing Python type hints. 
@@ -96,6 +96,8 @@ return: int
 Input:
 {function_text}
 
+Previous error:
+{previous_error or "None"}
 
 Infer: {needs_typing_text}
 Output:
