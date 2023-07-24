@@ -1,9 +1,9 @@
+import pytest
 from menderbot.__main__ import parse_type_hint_answer
 from menderbot.source_file import Insertion, insert_in_lines
-import pytest
 from tree_sitter import Language
 from menderbot.code import PythonLanguageStrategy, parse_source_to_tree
-from menderbot.typing import add_type_hints
+from menderbot.typing import add_type_hints, process_untyped_functions_in_tree
 
 
 PY_LANGUAGE = Language("build/my-languages.so", "python")
@@ -62,3 +62,27 @@ def test_add_type_hints_on_first_line(py_strat):
 
 def test_parse_type_hint_answer():
     assert parse_type_hint_answer("a : int\nreturn : Any\n") == [("a", "int")]
+
+
+def test_process_untyped_functions_one_result(py_strat):
+    tree = parse_string_to_tree(
+        """def foo(a):
+    pass""",
+        PY_LANGUAGE,
+    )
+    results = list(process_untyped_functions_in_tree(tree, py_strat))
+    assert len(results) == 1
+    (_, _, needs_typing) = results[0]
+    assert needs_typing == ["a", "return"]
+
+
+def test_process_untyped_functions_excludes_init(py_strat):
+    tree = parse_string_to_tree(
+        """def __init__(a):
+    pass""",
+        PY_LANGUAGE,
+    )
+    results = list(process_untyped_functions_in_tree(tree, py_strat))
+    assert len(results) == 1
+    (_, _, needs_typing) = results[0]
+    assert needs_typing == ["a"]

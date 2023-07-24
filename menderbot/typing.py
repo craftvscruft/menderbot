@@ -56,6 +56,10 @@ def process_untyped_functions(source_file: SourceFile):
     language_strategy = PythonLanguageStrategy()
     source = source_file.load_source_as_utf8()
     tree = language_strategy.parse_source_to_tree(source)
+    return process_untyped_functions_in_tree(tree, language_strategy)
+
+
+def process_untyped_functions_in_tree(tree, language_strategy):
     for node in language_strategy.get_function_nodes(tree):
         name = node_str(node.child_by_field_name("name"))
         params_node = node.child_by_field_name("parameters")
@@ -68,7 +72,7 @@ def process_untyped_functions(source_file: SourceFile):
         return_type_text = ""
         if return_type_node:
             return_type_text = " -> " + node_str(return_type_node)
-        else:
+        elif name != "__init__":
             needs_typing.append("return")
         params = node_str(params_node)
         print(f"def {name}{params}{return_type_text}")
