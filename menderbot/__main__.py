@@ -116,6 +116,32 @@ def parse_type_hint_answer(text):
     return [hint for hint in hints if hint[0] != "self" and hint[1].lower() != "any"]
 
 
+def try_function_type_hints(source_file, function_node, function_text, needs_typing):
+    max_tries = 2
+    check_output = None
+    for try_num in range(0, max_tries):
+        if try_num > 0:
+            console.print("Retrying")
+        prompt = type_prompt(function_text, needs_typing, previous_error=check_output)
+        answer = get_response_with_progress(INSTRUCTIONS, [], prompt)
+        console.print(f"[cyan]Bot[/cyan]:\n{answer}\n")
+        hints = parse_type_hint_answer(answer)
+        insertions_for_function = add_type_hints(function_node, hints)
+        if insertions_for_function:
+            source_file.update_file(insertions_for_function, suffix=".shadow")
+            (success, check_output) = run_check(
+                f"mypy --shadow-file {source_file.path} {source_file.path}.shadow"
+            )
+            if success:
+                console.print("[green]Type checker passed[/green], saving\n")
+                return insertions_for_function
+            else:
+                console.print("[red]Type checker failed[/red], discarding\n")
+        else:
+            console.print("No changes\n")
+    return []
+
+
 @cli.command("type")
 @click.argument("file")
 def type_command(file):
@@ -131,23 +157,9 @@ def type_command(file):
     for function_node, function_text, needs_typing in process_untyped_functions(
         source_file
     ):
-        prompt = type_prompt(function_text, needs_typing)
-        answer = get_response_with_progress(INSTRUCTIONS, [], prompt)
-        console.print(f"[cyan]Bot[/cyan]:\n{answer}\n")
-        hints = parse_type_hint_answer(answer)
-        insertions_for_function = add_type_hints(function_node, hints)
-        if insertions_for_function:
-            source_file.update_file(insertions_for_function, suffix=".shadow")
-            (success, check_output) = run_check(
-                f"mypy --shadow-file {file} {file}.shadow"
-            )
-            if success:
-                console.print("[green]Type checker passed[/green], saving\n")
-                insertions += insertions_for_function
-            else:
-                console.print("[red]Type checker failed[/red], discarding\n")
-        else:
-            console.print("No changes\n")
+        insertions += try_function_type_hints(
+            source_file, function_node, function_text, needs_typing
+        )
     if not insertions:
         console.print(f"No changes for '{file}.")
         return

@@ -40,7 +40,7 @@ def parse_source_to_tree(source, language):
 
 class LanguageStrategy(ABC):
     @abstractmethod
-    def function_has_comment(self, node):
+    def function_has_comment(self, node) -> bool:
         pass
 
     @abstractmethod
@@ -57,7 +57,7 @@ class LanguageStrategy(ABC):
 
     @property
     @abstractmethod
-    def function_doc_line_offset(self):
+    def function_doc_line_offset(self) -> int:
         pass
 
 
