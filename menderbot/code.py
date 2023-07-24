@@ -48,7 +48,7 @@ class LanguageStrategy(ABC):
         pass
 
     @abstractmethod
-    def get_node_declarator_name(self, node):
+    def get_node_declarator_name(self, node) -> str:
         pass
 
     @abstractmethod

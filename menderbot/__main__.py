@@ -78,29 +78,39 @@ def chat():
             console.print(f"[cyan]Bot[/cyan]: {response}")
 
 
-def type_prompt(function_text, needs_typing, previous_error=""):
+def type_prompt(function_text, needs_typing, previous_error):
+    # print("previous_error", previous_error)
     needs_typing_text = ",".join(needs_typing)
+    # Do not assume the existence any unreferenced classes outside the standard library unless you see.
     return f"""
 Please infer these missing Python type hints. 
 If you cannot determine the type with confidence, use 'any'. 
-Do not assume the existence any unreferenced classes outside the standard library.
 The lowercase built-in types available include: int, str, list, set, dict, tuple. 
+You will be shown a previous error message from the type-checker with useful clues.
 
 Input:
-def foo(a, b: int):
+```
+def foo(a, b: int, unk):
   return a + b
-
-Infer: a, return
+```
+Previous error: 
+```
+error: Argument 3 to "foo" has incompatible type "LightBulb"; expected "NoReturn"  [arg-type]
+```
+Infer: a, unk, return
 Output:
 a: int
+unk: LightBulb
 return: int
 
 Input:
+```
 {function_text}
-
+```
 Previous error:
-{previous_error or "None"}
-
+```
+{previous_error}
+```
 Infer: {needs_typing_text}
 Output:
 """
@@ -119,10 +129,22 @@ def parse_type_hint_answer(text):
 def try_function_type_hints(source_file, function_node, function_text, needs_typing):
     max_tries = 2
     check_output = None
+    # First set them all to wrong type, to produce an error message.
+    hints = [(ident, "None") for ident in needs_typing]
+    insertions_for_function = add_type_hints(function_node, hints)
+    if insertions_for_function:
+        source_file.update_file(insertions_for_function, suffix=".shadow")
+        (success, pre_check_output) = run_check(
+            f"mypy --shadow-file {source_file.path} {source_file.path}.shadow"
+        )
+        if not success:
+            check_output = pre_check_output
+            # console.print("Hint", check_output)
     for try_num in range(0, max_tries):
         if try_num > 0:
             console.print("Retrying")
         prompt = type_prompt(function_text, needs_typing, previous_error=check_output)
+        console.print(f"[cyan]Prompt[/cyan]:\n{prompt}\n")
         answer = get_response_with_progress(INSTRUCTIONS, [], prompt)
         console.print(f"[cyan]Bot[/cyan]:\n{answer}\n")
         hints = parse_type_hint_answer(answer)
