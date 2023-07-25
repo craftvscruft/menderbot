@@ -31,6 +31,7 @@ alias menderbot="pipenv run python -m menderbot"
 ### Pre-commit
 
 ```
+isort menderbot tests
 black menderbot tests
 pylint --disable=C,R menderbot
 pytest
