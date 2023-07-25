@@ -8,6 +8,12 @@ from rich.prompt import Prompt, Confirm
 
 from menderbot.llm import get_response, INSTRUCTIONS
 from menderbot.doc import document_file
+from menderbot.prompts import (
+    type_prompt,
+    code_review_prompt,
+    change_list_prompt,
+    commit_msg_prompt,
+)
 from menderbot.typing import add_type_hints, process_untyped_functions
 from menderbot.git_client import git_diff_head, git_commit
 from menderbot.code import reindent, function_indent
@@ -77,44 +83,6 @@ def chat():
             # add the new question and answer to the list of previous questions and answers
             previous_questions_and_answers.append((new_question, response))
             console.print(f"[cyan]Bot[/cyan]: {response}")
-
-
-def type_prompt(function_text, needs_typing, previous_error):
-    # print("previous_error", previous_error)
-    needs_typing_text = ",".join(needs_typing)
-    # Do not assume the existence any unreferenced classes outside the standard library unless you see.
-    return f"""
-Please infer these missing Python type hints. 
-If you cannot determine the type with confidence, use 'any'. 
-The lowercase built-in types available include: int, str, list, set, dict, tuple. 
-You will be shown a previous error message from the type-checker with useful clues.
-
-Input:
-```
-def foo(a, b: int, unk):
-  return a + b
-```
-Previous error: 
-```
-error: Argument 3 to "foo" has incompatible type "LightBulb"; expected "NoReturn"  [arg-type]
-```
-Infer: a, unk, return
-Output:
-a: int
-unk: LightBulb
-return: int
-
-Input:
-```
-{function_text}
-```
-Previous error:
-```
-{previous_error}
-```
-Infer: {needs_typing_text}
-Output:
-"""
 
 
 def parse_type_hint_answer(text):
@@ -255,43 +223,6 @@ def review():
         response_1 = get_response(INSTRUCTIONS, [], new_question)
         progress.update(task, completed=True)
     console.print(f"[cyan]Bot[/cyan]:\n{response_1}")
-
-
-def change_list_prompt(diff_text):
-    return f"""
-- Summarize the diff into markdown hyphen-bulleted list of changes.
-- Use present tense verbs like "Add/Update", not "Added/Updated".
-- Do not mention trivial changes like imports that support other changes.
-
-# BEGIN DIFF
-{diff_text}
-# END DIFF
-"""
-
-
-def code_review_prompt(diff_text):
-    return f"""
-Act as an expert Software Engineer. Give a code review for this diff.
-
-# BEGIN DIFF
-{diff_text}
-# END DIFF
-"""
-
-
-def commit_msg_prompt(change_list_text):
-    return f"""
-From this list of changes, write a brief commit message.
-- Sart with a one line summary, guessing the specific intent behind the changes including the names of any updated features. 
-- Include a condensed version of the input change list formatted as a markdown list with hyphen "-" bullets. 
-- Only output the new commit message, not any further conversation.
-- Omit from the list trivial changes like imports
-- Do not refer to anything that changes behavior as a "refactor"
-
-# BEGIN CHANGES
-{change_list_text}
-# END CHANGES
-"""
 
 
 @cli.command()
