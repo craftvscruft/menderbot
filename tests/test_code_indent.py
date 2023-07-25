@@ -1,4 +1,4 @@
-from menderbot.code import line_indent, function_indent, reindent
+from menderbot.code import function_indent, line_indent, reindent
 
 
 def test_line_indent_spaces():

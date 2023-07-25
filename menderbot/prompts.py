@@ -1,4 +1,4 @@
-def type_prompt(function_text, needs_typing, previous_error):
+def type_prompt(function_text: str, needs_typing: list, previous_error: str) -> str:
     # print("previous_error", previous_error)
     needs_typing_text = ",".join(needs_typing)
     # Do not assume the existence any unreferenced classes outside the standard library unless you see.
@@ -36,7 +36,7 @@ Output:
 """
 
 
-def change_list_prompt(diff_text):
+def change_list_prompt(diff_text: str) -> str:
     return f"""
 - Summarize the diff into markdown hyphen-bulleted list of changes.
 - Use present tense verbs like "Add/Update", not "Added/Updated".
@@ -48,7 +48,7 @@ def change_list_prompt(diff_text):
 """
 
 
-def code_review_prompt(diff_text):
+def code_review_prompt(diff_text: str) -> str:
     return f"""
 Act as an expert Software Engineer. Give a code review for this diff.
 
@@ -58,7 +58,7 @@ Act as an expert Software Engineer. Give a code review for this diff.
 """
 
 
-def commit_msg_prompt(change_list_text):
+def commit_msg_prompt(change_list_text: str) -> str:
     return f"""
 From this list of changes, write a brief commit message.
 - Sart with a one line summary, guessing the specific intent behind the changes including the names of any updated features. 
@@ -67,7 +67,18 @@ From this list of changes, write a brief commit message.
 - Omit from the list trivial changes like imports
 - Do not refer to anything that changes behavior as a "refactor"
 
+Example Output:
+```
+Refactor foo module
+
+* Add types to foo.bar
+* Extract baz logic from foo.main to foo.baz
+* Formatting
+```
+
 # BEGIN CHANGES
 {change_list_text}
 # END CHANGES
+
+Output:
 """

@@ -1,11 +1,11 @@
 import pytest
+from tree_sitter import Language
+
 from menderbot.code import (
     CppLanguageStrategy,
     PythonLanguageStrategy,
     parse_source_to_tree,
 )
-from tree_sitter import Language
-
 
 PY_LANGUAGE = Language("build/my-languages.so", "python")
 CPP_LANGUAGE = Language("build/my-languages.so", "cpp")

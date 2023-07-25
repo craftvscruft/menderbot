@@ -1,5 +1,6 @@
-import os
 import logging
+import os
+
 from menderbot.code import PythonLanguageStrategy
 from menderbot.source_file import Insertion, SourceFile
 

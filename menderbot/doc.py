@@ -1,9 +1,9 @@
-import os
 import logging
+import os
 from typing import Callable
-from menderbot.code import LANGUAGE_STRATEGIES
 
-from menderbot.source_file import SourceFile, Insertion
+from menderbot.code import LANGUAGE_STRATEGIES
+from menderbot.source_file import Insertion, SourceFile
 
 logger = logging.getLogger("doc")
 

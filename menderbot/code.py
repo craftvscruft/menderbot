@@ -1,4 +1,5 @@
-from abc import abstractmethod, ABC
+from abc import ABC, abstractmethod
+
 from tree_sitter import Language, Parser
 
 CPP_LANGUAGE = Language("build/my-languages.so", "cpp")

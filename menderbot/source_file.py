@@ -1,11 +1,12 @@
-import tempfile
-from typing import Iterable
-from dataclasses import dataclass
-import os
 import itertools
+import os
+import tempfile
+from dataclasses import dataclass
 from pathlib import Path
-from charset_normalizer import from_path
+from typing import Iterable
+
 import rich_click as click
+from charset_normalizer import from_path
 
 
 @dataclass

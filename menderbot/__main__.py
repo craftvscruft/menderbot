@@ -1,23 +1,24 @@
 import os
 import re
-from menderbot.check import run_check
-import rich_click as click
-from rich.progress import Progress
-from rich.console import Console
-from rich.prompt import Prompt, Confirm
 
-from menderbot.llm import get_response, INSTRUCTIONS
+import rich_click as click
+from rich.console import Console
+from rich.progress import Progress
+from rich.prompt import Confirm, Prompt
+
+from menderbot.check import run_check
+from menderbot.code import function_indent, reindent
 from menderbot.doc import document_file
+from menderbot.git_client import git_commit, git_diff_head
+from menderbot.llm import INSTRUCTIONS, get_response, unwrap_codeblock
 from menderbot.prompts import (
-    type_prompt,
-    code_review_prompt,
     change_list_prompt,
+    code_review_prompt,
     commit_msg_prompt,
+    type_prompt,
 )
-from menderbot.typing import add_type_hints, process_untyped_functions
-from menderbot.git_client import git_diff_head, git_commit
-from menderbot.code import reindent, function_indent
 from menderbot.source_file import SourceFile
+from menderbot.typing import add_type_hints, process_untyped_functions
 
 console = Console()
 
@@ -46,7 +47,7 @@ def cli(ctx, debug, dry):
     """
     del debug
     # print(f"Debug mode is {'on' if debug else 'off'}")
-    if not "OPENAI_API_KEY" in os.environ:
+    if "OPENAI_API_KEY" not in os.environ:
         console.log("OPENAI_API_KEY not found in env, will not be able to connect.")
     ctx.ensure_object(dict)
     ctx.obj["DRY"] = dry
@@ -239,7 +240,7 @@ def commit():
     question_2 = commit_msg_prompt(response_1)
     with Progress(transient=True) as progress:
         task = progress.add_task("[green]Processing...", total=None)
-        response_2 = get_response(INSTRUCTIONS, [], question_2)
+        response_2 = unwrap_codeblock(get_response(INSTRUCTIONS, [], question_2))
         progress.update(task, completed=True)
     console.print(f"[cyan]Bot[/cyan]:\n{response_2}")
     git_commit(response_2)
