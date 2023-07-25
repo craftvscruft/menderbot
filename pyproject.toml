@@ -1,0 +1,16 @@
+[project]
+name = "menderbot"
+dynamic = ["version"]
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project.scripts]
+menderbot = "menderbot.__main__:cli"
+
+[tool.setuptools]
+packages = ["menderbot"]
+
+[tool.setuptools.dynamic]
+version = {attr = "menderbot.VERSION"}

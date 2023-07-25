@@ -11,6 +11,8 @@ tree-sitter = "*"
 charset-normalizer = "*"
 tiktoken = "*"
 types-tree-sitter = "*"
+llama-index = "*"
+gitpython = "*"
 
 [dev-packages]
 black = "*"

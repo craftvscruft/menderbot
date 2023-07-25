@@ -20,14 +20,14 @@ pipenv shell
 python -m menderbot.build_treesitter
 ```
 ### Running
+
+While in the pipenv shell, install editable version.
 ```
-python -m menderbot
+python -m pip install -e .
 ```
 
-To save typing, consider something like:
-```
-alias menderbot="pipenv run python -m menderbot"
-```
+Then run with `menderbot`.
+
 ### Pre-commit
 
 Formatting, linting, tests, and type-checking can all be run through pre-commit, configured in `.pre-commit-config`.

@@ -17,6 +17,7 @@ from menderbot.prompts import (
     commit_msg_prompt,
     type_prompt,
 )
+from menderbot import VERSION
 from menderbot.source_file import SourceFile
 from menderbot.typing import add_type_hints, process_untyped_functions
 
@@ -34,7 +35,7 @@ console = Console()
     default=False,
     help="Dry run, do not call API, only output prompts.",
 )
-@click.version_option("0.0.1", prog_name="menderbot")
+@click.version_option(VERSION, prog_name="menderbot")
 @click.pass_context
 def cli(ctx, debug, dry):
     """
@@ -200,7 +201,7 @@ CODE:
 @cli.command()
 @click.argument("file")
 def doc(file):
-    """Generate documentation for the existing code."""
+    """Generate function-level documentation for the existing code (Python only)."""
     source_file = SourceFile(file)
     insertions = document_file(source_file, generate_doc)
     if not insertions:
@@ -215,7 +216,7 @@ def doc(file):
 
 @cli.command()
 def review():
-    """Review a code block or changeset and provide feedback"""
+    """Review a code block or changeset and provide feedback."""
     console.print("Reading diff from STDIN...")
     diff_text = click.get_text_stream("stdin").read()
     new_question = code_review_prompt(diff_text)
