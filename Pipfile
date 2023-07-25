@@ -19,6 +19,8 @@ pylint = "*"
 mypy = "*"
 flake8 = "*"
 isort = "*"
+pre-commit = "*"
+pytest-cov = "*"
 
 [requires]
 python_version = "3.9"

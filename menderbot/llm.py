@@ -20,7 +20,7 @@ def is_test_override() -> bool:
     return os.getenv("OPENAI_API_KEY") == "test-override"
 
 
-def test_override_response(messages) -> str:
+def override_response_for_test(messages) -> str:
     del messages
     return "<LLM Output>"
 
@@ -50,7 +50,7 @@ def get_response(
     messages.append({"role": "user", "content": new_question})
 
     if is_test_override():
-        return test_override_response(messages)
+        return override_response_for_test(messages)
     completion = openai.ChatCompletion.create(
         model="gpt-4",
         messages=messages,

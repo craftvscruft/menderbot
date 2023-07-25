@@ -30,6 +30,16 @@ alias menderbot="pipenv run python -m menderbot"
 ```
 ### Pre-commit
 
+Formatting, linting, tests, and type-checking can all be run through pre-commit, configured in `.pre-commit-config`.
+
+```
+pre-commit run --all-files
+```
+
+Install this as a git hook with `pre-commit install`.
+
+Or you can run individual steps
+
 ```
 isort menderbot tests
 black menderbot tests
