@@ -17,6 +17,12 @@ from llama_index.tools.query_engine import QueryEngineTool
 from menderbot.llm import is_test_override
 
 PERSIST_DIR = ".menderbot/ingest"
+INDEX_FILE_NAMES = [
+    "docstore.json",
+    "graph_store.json",
+    "index_store.json",
+    "vector_store",
+]
 
 
 def delete_index(persist_dir):
@@ -51,6 +57,15 @@ def ingest_repo(replace=False):
     index.storage_context.persist(persist_dir=PERSIST_DIR)
 
 
+def index_exists():
+    return all(
+        [
+            os.path.exists(os.path.join(PERSIST_DIR, filename))
+            for filename in INDEX_FILE_NAMES
+        ]
+    )
+
+
 def load_index():
     storage_context = StorageContext.from_defaults(persist_dir=PERSIST_DIR)
     return load_index_from_storage(storage_context)
@@ -73,8 +88,12 @@ def get_service_context():
 
 
 def get_query_engine():
-    return load_index().as_query_engine(
-        similarity_top_k=5, service_context=get_service_context()
+    if index_exists():
+        return load_index().as_query_engine(
+            similarity_top_k=5, service_context=get_service_context()
+        )
+    return VectorStoreIndex.from_documents([]).as_query_engine(
+        service_context=get_service_context()
     )
 
 

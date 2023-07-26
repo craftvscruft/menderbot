@@ -11,7 +11,7 @@ from menderbot.check import run_check
 from menderbot.code import function_indent, reindent
 from menderbot.doc import document_file
 from menderbot.git_client import git_commit, git_diff_head
-from menderbot.ingest import ask_index, get_chat_engine, ingest_repo
+from menderbot.ingest import ask_index, get_chat_engine, index_exists, ingest_repo
 from menderbot.llm import INSTRUCTIONS, get_response, unwrap_codeblock
 from menderbot.prompts import (
     change_list_prompt,
@@ -59,6 +59,9 @@ def cli(ctx, debug, dry):
 @click.argument("q", required=False)
 def ask(q):
     """Ask a question about a specific piece of code or concept."""
+    if not index_exists():
+        console.print("[red]Index not found[/red]: please run menderbot ingest")
+        return
     new_question = q
     if not new_question:
         new_question = console.input("[green]Ask[/green]: ")
@@ -72,11 +75,14 @@ def ask(q):
 @cli.command()
 def chat():
     """Interactively chat in the context of the current directory."""
-    console.print("Loading index...")
+    if not index_exists():
+        console.print("[red]Index not found[/red]: please run menderbot ingest")
+    else:
+        console.print("Loading index...")
     chat_engine = get_chat_engine()
     while True:
         new_question = console.input("[green]Ask[/green]: ")
-        new_question += "\nUse your tool to query for context."
+        # new_question += "\nUse your tool to query for context."
         if new_question:
             streaming_response = chat_engine.stream_chat(new_question)
             console.print("[cyan]Bot[/cyan]: ", end="")
