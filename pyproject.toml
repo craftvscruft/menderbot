@@ -1,9 +1,46 @@
 [project]
 name = "menderbot"
 dynamic = ["version"]
+description = "The AI-powered command line tool for working with legacy code"
+readme = "README.md"
+authors = [{ name = "Ray Myers" }]
+license = { file = "LICENSE" }
+classifiers = [
+    "License :: OSI Approved :: Apache License",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+]
+keywords = ["ai", "gpt", "refactoring", "legacy", "code"]
+dependencies = [
+    "click >= 8.0.0",
+    "rich-click >= 1.6.0",
+    "tree-sitter >= 0.20.1, < 0.21.0",
+    "charset-normalizer >= 3.2.0",
+    "tiktoken",
+    "llama-index >= 0.7.12",
+    "rich-click",
+    "gitpython"
+]
+requires-python = ">=3.9"
+
+[project.optional-dependencies]
+dev = [
+    "black", 
+    "bumpver", 
+    "isort", 
+    "pip-tools", 
+    "pytest",
+    "pylint",
+    "mypy",
+    "pre-commit",
+    "pytest-cov"
+]
+
+[project.urls]
+Homepage = "https://github.com/craftvscruft/menderbot"
 
 [build-system]
-requires = ["setuptools>=61.0"]
+requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project.scripts]
@@ -17,3 +54,23 @@ version = {attr = "menderbot.VERSION"}
 
 [tool.black]
 exclude = "vendor"
+
+[tool.bumpver]
+current_version = "2023.1001-alpha"
+version_pattern = "YYYY.BUILD[-TAG]"
+commit_message = "bump version {old_version} -> {new_version}"
+tag_message = "{new_version}"
+tag_scope = "default"
+commit = true
+tag = true
+push = true
+
+[tool.bumpver.file_patterns]
+"pyproject.toml" = [
+    'current_version = "{version}"',
+]
+"README.md" = [
+    "{version}",
+    "{pep440_version}",
+]
+
