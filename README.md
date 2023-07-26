@@ -67,3 +67,36 @@ pylint --disable=C,R menderbot
 pytest
 mypy
 ```
+
+## Author
+
+👤 **Ray Myers**
+
+* YouTube: [Craft vs Cruft](https://www.youtube.com/channel/UC4nEbAo5xFsOZDk2v0RIGHA)
+* Twitter: [@lambdapocalypse](https://twitter.com/lambdapocalypse)
+* GitHub: [@raymyers](https://github.com/raymyers)
+* LinkedIn: [@cadrlife](https://linkedin.com/in/cadrlife)
+
+## 🤝 Contributing
+
+Contributions, issues and feature requests are welcome!
+
+Feel free to check [issues page](https://github.com/craftvscruft/menderbot/issues). You can also take a look at the [contributing guide](https://github.com/craftvscruft/menderbot/blob/main/CONTRIBUTING.md).
+
+## Show your support
+
+Give a ⭐️ if this project helped you!
+<!-- 
+[![support us](https://img.shields.io/badge/become-a%20patreon%20us-orange.svg?cacheSeconds=2592000)](https://www.patreon.com/craftvscruft) -->
+
+## Acknowledgements
+
+* [OpenAI](https://platform.openai.com/docs/models/overview) GPT and Ada models
+* [LlamaIndex](https://gpt-index.readthedocs.io/en/latest/), an LLM data framework
+* [tree-sitter](https://tree-sitter.github.io/tree-sitter/) parser library
+
+## 📝 License
+
+Copyright © 2023 [Ray Myers](https://github.com/raymyers).
+
+This project is [Apache 2](https://www.apache.org/licenses/LICENSE-2.0) licensed.
