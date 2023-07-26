@@ -163,3 +163,4 @@ cython_debug/
 *.shadow
 .vscode
 .menderbot
+.idea
