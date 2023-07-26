@@ -7,9 +7,7 @@ from menderbot.__main__ import ask, cli
 @pytest.fixture
 def runner(mock_embeddings):
     del mock_embeddings
-    return CliRunner(
-        env={"OPENAI_API_KEY": "sk-TEST00000000000000000000000000000000000000000000"}
-    )
+    return CliRunner()
 
 
 def test_noargs_shows_usage_message(runner):

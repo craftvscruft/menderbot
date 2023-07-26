@@ -1,3 +1,4 @@
+import os
 from unittest.mock import patch
 
 import pytest
@@ -14,6 +15,15 @@ def mock_embeddings():
             side_effect=mock_get_text_embedding,
         ):
             yield
+
+
+@pytest.fixture(autouse=True)
+def mock_settings_env_vars():
+    with patch.dict(
+        os.environ,
+        {"OPENAI_API_KEY": "sk-TEST00000000000000000000000000000000000000000000"},
+    ):
+        yield
 
 
 def mock_get_text_embedding(text: str) -> list[float]:
