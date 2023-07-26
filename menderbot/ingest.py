@@ -10,7 +10,6 @@ from llama_index import (
     load_index_from_storage,
 )
 from llama_index.agent import OpenAIAgent
-from llama_index.embeddings import OpenAIEmbedding
 from llama_index.llms import MockLLM, OpenAI
 from llama_index.tools.query_engine import QueryEngineTool
 
@@ -25,24 +24,25 @@ INDEX_FILE_NAMES = [
 ]
 
 
-def delete_index(persist_dir):
+def delete_index(persist_dir: str) -> None:
     if os.path.exists(persist_dir):
         map(os.remove, glob.glob(os.path.join(persist_dir, "*.json")))
 
 
-def ingest_repo(replace=False):
+def ingest_repo(replace=False) -> None:
     if replace:
         delete_index(PERSIST_DIR)
     excluded_paths = ["Pipfile.lock"]
     repo = Repo(".")
     commit = repo.commit("HEAD")
+    
     file_paths = [
-        item.path
+        item.path # type: ignore
         for item in commit.tree.traverse()
-        if item.type == "blob" and item.path not in excluded_paths
+        if item.type == "blob" and item.path not in excluded_paths # type: ignore
     ]
 
-    def filename_fn(filename):
+    def filename_fn(filename: str) -> dict:
         return {"file_name": filename}
 
     documents = SimpleDirectoryReader(
@@ -57,7 +57,7 @@ def ingest_repo(replace=False):
     index.storage_context.persist(persist_dir=PERSIST_DIR)
 
 
-def index_exists():
+def index_exists() -> bool:
     return all(
         [
             os.path.exists(os.path.join(PERSIST_DIR, filename))
@@ -77,13 +77,7 @@ def get_llm():
     return OpenAI(temperature=0, model="gpt-3.5-turbo")
 
 
-def get_embedding_model():
-    if is_test_override():
-        return OpenAI
-    return OpenAIEmbedding()
-
-
-def get_service_context():
+def get_service_context() -> ServiceContext:
     return ServiceContext.from_defaults(llm=get_llm())
 
 
@@ -97,11 +91,11 @@ def get_query_engine():
     )
 
 
-def ask_index(query):
+def ask_index(query: str):
     return get_query_engine().query(query)
 
 
-def get_chat_engine(verbose=False):
+def get_chat_engine(verbose=False) -> OpenAIAgent:
     system_prompt = """
 You are a Menderbot chat agent discussing a legacy codebase.
 """
