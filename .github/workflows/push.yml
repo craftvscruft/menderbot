@@ -33,4 +33,4 @@ jobs:
           pipenv run pytest --cov --cov-fail-under=50
       - name: type-checking
         run: |
-          mypy
+          pipenv run mypy
