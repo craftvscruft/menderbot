@@ -14,6 +14,14 @@ AI-powered command line tool for working with legacy code. Based on the principl
 
 ## Developing
 
+This project uses [git submodules](https://git-scm.com/book/en/v2/Git-Tools-Submodules) for the parser grammars, so you'll want to clone it this way.
+
+```
+git clone --recurse-submodules git@github.com:craftvscruft/menderbot.git
+```
+
+Then you can initialize the Python environment using pipenv.
+
 ```
 pipenv shell
 
