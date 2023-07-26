@@ -20,7 +20,7 @@ INDEX_FILE_NAMES = [
     "docstore.json",
     "graph_store.json",
     "index_store.json",
-    "vector_store",
+    "vector_store.json",
 ]
 
 
