@@ -14,3 +14,6 @@ packages = ["menderbot"]
 
 [tool.setuptools.dynamic]
 version = {attr = "menderbot.VERSION"}
+
+[tool.black]
+exclude = "vendor"

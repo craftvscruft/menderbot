@@ -7,7 +7,6 @@ repos:
         language: system
         entry: pipenv run isort
         types: [python]
-        files: menderbot tests
 
       - id: black
         name: black
@@ -15,7 +14,6 @@ repos:
         language: system
         entry: pipenv run black
         types: [python]
-        files: menderbot tests
 
       - id: mypy
         name: mypy

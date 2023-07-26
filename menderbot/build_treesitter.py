@@ -23,7 +23,9 @@ def build_tree_sitter_binary() -> None:
 
 def ensure_tree_sitter_binary() -> str:
     if not exists(__TREE_SITTER_BINARY__):
-        print(f"Tree-Sitter binary not found at {__TREE_SITTER_BINARY__}. Attempting to build.")
+        print(
+            f"Tree-Sitter binary not found at {__TREE_SITTER_BINARY__}. Attempting to build."
+        )
         build_tree_sitter_binary()
     return __TREE_SITTER_BINARY__
 
