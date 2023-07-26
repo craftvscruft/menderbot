@@ -1,13 +1,14 @@
 import pytest
 from tree_sitter import Language
 
-from menderbot.build_treesitter import TREE_SITTER_BINARY
+from menderbot.build_treesitter import ensure_tree_sitter_binary
 from menderbot.code import (
     CppLanguageStrategy,
     PythonLanguageStrategy,
     parse_source_to_tree,
 )
 
+TREE_SITTER_BINARY = ensure_tree_sitter_binary()
 PY_LANGUAGE = Language(TREE_SITTER_BINARY, "python")
 CPP_LANGUAGE = Language(TREE_SITTER_BINARY, "cpp")
 

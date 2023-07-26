@@ -12,6 +12,12 @@ AI-powered command line tool for working with legacy code. Based on the principl
 * `menderbot type`: Insert type hints (Python only)
 
 
+## System requirements
+
+* [pipenv](https://pipenv.pypa.io/en/latest/) (for managing Python environments)
+* C Compiler
+* The environment variable `OPENAI_API_KEY` set to a valid OpenAI API Key.
+
 ## Developing
 
 This project uses [git submodules](https://git-scm.com/book/en/v2/Git-Tools-Submodules) for the parser grammars, so you'll want to clone it this way.
@@ -24,8 +30,6 @@ Then you can initialize the Python environment using pipenv.
 
 ```
 pipenv shell
-
-python -m menderbot.build_treesitter
 ```
 ### Running
 

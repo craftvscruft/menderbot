@@ -8,8 +8,6 @@ from rich.prompt import Confirm
 
 from menderbot import VERSION
 from menderbot.check import run_check
-from menderbot.code import function_indent, reindent
-from menderbot.doc import document_file
 from menderbot.git_client import git_commit, git_diff_head
 from menderbot.ingest import ask_index, get_chat_engine, index_exists, ingest_repo
 from menderbot.llm import INSTRUCTIONS, get_response, unwrap_codeblock
@@ -20,7 +18,6 @@ from menderbot.prompts import (
     type_prompt,
 )
 from menderbot.source_file import SourceFile
-from menderbot.typing import add_type_hints, process_untyped_functions
 
 console = Console()
 
@@ -103,6 +100,8 @@ def parse_type_hint_answer(text):
 
 
 def try_function_type_hints(source_file, function_node, function_text, needs_typing):
+    from menderbot.typing import add_type_hints  # Lazy import
+
     mypy_args = "--no-error-summary --soft-error-limit 10"
     check_command = (
         f"mypy {mypy_args} --shadow-file {source_file.path} {source_file.path}.shadow"
@@ -147,6 +146,8 @@ def try_function_type_hints(source_file, function_node, function_text, needs_typ
 @click.argument("file")
 def type_command(file):
     """Insert type hints (Python only)"""
+    from menderbot.typing import process_untyped_functions  # Lazy import
+
     console.print("Running type-checker baseline")
     (success, check_output) = run_check("mypy")
     if not success:
@@ -190,6 +191,8 @@ Respond with docstring only, no code.
 CODE:
 {code}
 """
+    from menderbot.code import function_indent, reindent  # Lazy import
+
     with Progress(transient=True) as progress:
         task = progress.add_task("[green]Processing...", total=None)
         doc_text = get_response(INSTRUCTIONS, [], question)
@@ -206,6 +209,8 @@ CODE:
 @click.argument("file")
 def doc(file):
     """Generate function-level documentation for the existing code (Python only)."""
+    from menderbot.doc import document_file  # Lazy import
+
     source_file = SourceFile(file)
     insertions = document_file(source_file, generate_doc)
     if not insertions:

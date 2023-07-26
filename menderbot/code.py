@@ -2,8 +2,9 @@ from abc import ABC, abstractmethod
 
 from tree_sitter import Language, Parser
 
-from menderbot.build_treesitter import TREE_SITTER_BINARY
+from menderbot.build_treesitter import ensure_tree_sitter_binary
 
+TREE_SITTER_BINARY = ensure_tree_sitter_binary()
 CPP_LANGUAGE = Language(TREE_SITTER_BINARY, "cpp")
 PY_LANGUAGE = Language(TREE_SITTER_BINARY, "python")
 
