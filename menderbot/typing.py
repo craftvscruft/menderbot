@@ -1,5 +1,6 @@
 import logging
 import os
+import re
 
 from menderbot.code import PythonLanguageStrategy
 from menderbot.source_file import Insertion, SourceFile
@@ -9,6 +10,17 @@ logger = logging.getLogger("typing")
 
 def node_str(node) -> str:
     return str(node.text, encoding="utf-8")
+
+
+def parse_type_hint_answer(text: str) -> list:
+    def line_to_tuple(line: str) -> tuple:
+        [ident, new_type] = line.split(":")
+        new_type = re.sub(r"\bList\b", "list", new_type)
+        return (ident.strip(), new_type.strip())
+
+    lines = text.strip().splitlines()
+    hints = [line_to_tuple(line) for line in lines if ":" in line]
+    return [hint for hint in hints if hint[0] != "self" and hint[1].lower() != "any"]
 
 
 def add_type_hints(function_node, hints: list) -> list:

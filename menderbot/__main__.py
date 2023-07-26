@@ -1,5 +1,4 @@
 import os
-import re
 
 import rich_click as click
 from rich.console import Console
@@ -88,19 +87,8 @@ def chat():
             console.out("\n")
 
 
-def parse_type_hint_answer(text):
-    def line_to_tuple(line):
-        [ident, new_type] = line.split(":")
-        new_type = re.sub(r"\bList\b", "list", new_type)
-        return (ident.strip(), new_type.strip())
-
-    lines = text.strip().splitlines()
-    hints = [line_to_tuple(line) for line in lines if ":" in line]
-    return [hint for hint in hints if hint[0] != "self" and hint[1].lower() != "any"]
-
-
 def try_function_type_hints(source_file, function_node, function_text, needs_typing):
-    from menderbot.typing import add_type_hints  # Lazy import
+    from menderbot.typing import add_type_hints, parse_type_hint_answer  # Lazy import
 
     mypy_args = "--no-error-summary --soft-error-limit 10"
     check_command = (
@@ -116,12 +104,10 @@ def try_function_type_hints(source_file, function_node, function_text, needs_typ
         (success, pre_check_output) = run_check(check_command)
         if not success:
             check_output = pre_check_output
-            # console.print("Hint", check_output)
     for try_num in range(0, max_tries):
         if try_num > 0:
             console.print("Retrying")
         prompt = type_prompt(function_text, needs_typing, previous_error=check_output)
-        # console.print(f"[cyan]Prompt[/cyan]:\n{prompt}\n")
         answer = get_response_with_progress(INSTRUCTIONS, [], prompt)
         hints = parse_type_hint_answer(answer)
 

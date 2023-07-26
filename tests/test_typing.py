@@ -1,11 +1,19 @@
+from typing import Iterable
+from unittest.mock import patch
+
 import pytest
 from tree_sitter import Language
 
-from menderbot.__main__ import parse_type_hint_answer
+from menderbot.__main__ import try_function_type_hints
 from menderbot.build_treesitter import ensure_tree_sitter_binary
 from menderbot.code import PythonLanguageStrategy, parse_source_to_tree
-from menderbot.source_file import Insertion, insert_in_lines
-from menderbot.typing import add_type_hints, process_untyped_functions_in_tree
+from menderbot.source_file import Insertion, SourceFile, insert_in_lines
+from menderbot.typing import (
+    add_type_hints,
+    node_str,
+    parse_type_hint_answer,
+    process_untyped_functions_in_tree,
+)
 
 TREE_SITTER_BINARY = ensure_tree_sitter_binary()
 PY_LANGUAGE = Language(TREE_SITTER_BINARY, "python")
@@ -88,3 +96,44 @@ def test_process_untyped_functions_excludes_init(py_strat):
     assert len(results) == 1
     (_, _, needs_typing) = results[0]
     assert needs_typing == ["a"]
+
+
+class MockSourceFile(SourceFile):
+    def __init__(self):
+        self.path = ""
+
+    def load_source_as_utf8(self):
+        return ""
+
+    def update_file(self, insertions: Iterable[Insertion], suffix: str) -> None:
+        pass
+
+
+def test_try_function_type_hints(py_strat):
+    code = """
+    def foo(a):
+        pass
+    """
+    tree = parse_string_to_tree(
+        code,
+        PY_LANGUAGE,
+    )
+    expected = [
+        Insertion(text=": int", line_number=2, col=9, inline=True, label="foo"),
+        Insertion(text=" -> None", line_number=2, col=10, inline=True, label="foo"),
+    ]
+    with patch(
+        "menderbot.check.run_check",
+        side_effect=lambda _: True,
+    ):
+        source_file = MockSourceFile()
+        function_node = py_strat.get_function_nodes(tree)[0]
+        function_text = node_str(function_node)
+        no_hints = try_function_type_hints(
+            source_file, function_node, function_text, []
+        )
+        assert no_hints == []
+        one_hint_no_results = try_function_type_hints(
+            source_file, function_node, function_text, ["a"]
+        )
+        assert one_hint_no_results == []
