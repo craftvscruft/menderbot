@@ -35,11 +35,11 @@ def ingest_repo(replace=False) -> None:
     excluded_paths = ["Pipfile.lock"]
     repo = Repo(".")
     commit = repo.commit("HEAD")
-    
+
     file_paths = [
-        item.path # type: ignore
+        item.path  # type: ignore
         for item in commit.tree.traverse()
-        if item.type == "blob" and item.path not in excluded_paths # type: ignore
+        if item.type == "blob" and item.path not in excluded_paths  # type: ignore
     ]
 
     def filename_fn(filename: str) -> dict:

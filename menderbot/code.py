@@ -2,8 +2,10 @@ from abc import ABC, abstractmethod
 
 from tree_sitter import Language, Parser
 
-CPP_LANGUAGE = Language("build/my-languages.so", "cpp")
-PY_LANGUAGE = Language("build/my-languages.so", "python")
+from menderbot.build_treesitter import TREE_SITTER_BINARY
+
+CPP_LANGUAGE = Language(TREE_SITTER_BINARY, "cpp")
+PY_LANGUAGE = Language(TREE_SITTER_BINARY, "python")
 
 
 def node_str(node) -> str:

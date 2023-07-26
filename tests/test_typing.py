@@ -2,11 +2,12 @@ import pytest
 from tree_sitter import Language
 
 from menderbot.__main__ import parse_type_hint_answer
+from menderbot.build_treesitter import TREE_SITTER_BINARY
 from menderbot.code import PythonLanguageStrategy, parse_source_to_tree
 from menderbot.source_file import Insertion, insert_in_lines
 from menderbot.typing import add_type_hints, process_untyped_functions_in_tree
 
-PY_LANGUAGE = Language("build/my-languages.so", "python")
+PY_LANGUAGE = Language(TREE_SITTER_BINARY, "python")
 
 
 @pytest.fixture
