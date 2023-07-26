@@ -4,12 +4,14 @@ import re
 import rich_click as click
 from rich.console import Console
 from rich.progress import Progress
-from rich.prompt import Confirm, Prompt
+from rich.prompt import Confirm
 
+from menderbot import VERSION
 from menderbot.check import run_check
 from menderbot.code import function_indent, reindent
 from menderbot.doc import document_file
 from menderbot.git_client import git_commit, git_diff_head
+from menderbot.ingest import ask_index, get_chat_engine, ingest_repo
 from menderbot.llm import INSTRUCTIONS, get_response, unwrap_codeblock
 from menderbot.prompts import (
     change_list_prompt,
@@ -17,7 +19,6 @@ from menderbot.prompts import (
     commit_msg_prompt,
     type_prompt,
 )
-from menderbot import VERSION
 from menderbot.source_file import SourceFile
 from menderbot.typing import add_type_hints, process_untyped_functions
 
@@ -60,10 +61,10 @@ def ask(q):
     """Ask a question about a specific piece of code or concept."""
     new_question = q
     if not new_question:
-        new_question = Prompt.ask("[green]Ask")
+        new_question = console.input("[green]Ask[/green]: ")
     with Progress(transient=True) as progress:
         task = progress.add_task("[green]Processing...", total=None)
-        response = get_response(INSTRUCTIONS, [], new_question)
+        response = ask_index(new_question)
         progress.update(task, completed=True)
     console.print(f"[cyan]Bot[/cyan]: {response}")
 
@@ -71,20 +72,17 @@ def ask(q):
 @cli.command()
 def chat():
     """Interactively chat in the context of the current directory."""
-    previous_questions_and_answers = []
+    console.print("Loading index...")
+    chat_engine = get_chat_engine()
     while True:
-        new_question = Prompt.ask("[green]Ask")
+        new_question = console.input("[green]Ask[/green]: ")
+        new_question += "\nUse your tool to query for context."
         if new_question:
-            # Moderation?
-            with Progress(transient=True) as progress:
-                task = progress.add_task("[green]Processing...", total=None)
-                response = get_response(
-                    INSTRUCTIONS, previous_questions_and_answers, new_question
-                )
-                progress.update(task, completed=True)
-            # add the new question and answer to the list of previous questions and answers
-            previous_questions_and_answers.append((new_question, response))
-            console.print(f"[cyan]Bot[/cyan]: {response}")
+            streaming_response = chat_engine.stream_chat(new_question)
+            console.print("[cyan]Bot[/cyan]: ", end="")
+            for token in streaming_response.response_gen:
+                console.out(token, end="")
+            console.out("\n")
 
 
 def parse_type_hint_answer(text):
@@ -258,6 +256,12 @@ def diff():
         response_1 = get_response(INSTRUCTIONS, [], new_question)
         progress.update(task, completed=True)
     console.print(f"[cyan]Bot[/cyan]:\n{response_1}")
+
+
+@cli.command()
+def ingest():
+    """Index files in current repo to be used with 'ask' and 'chat'."""
+    ingest_repo()
 
 
 if __name__ == "__main__":

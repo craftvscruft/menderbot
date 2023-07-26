@@ -28,6 +28,10 @@ python -m pip install -e .
 
 Then run with `menderbot`.
 
+### Installing
+
+Not yet supported, run within pipenv on a local checkout for now. Upvote this [issue](https://github.com/craftvscruft/menderbot/issues/1) if you're interested.
+
 ### Pre-commit
 
 Formatting, linting, tests, and type-checking can all be run through pre-commit, configured in `.pre-commit-config`.

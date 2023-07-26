@@ -11,7 +11,7 @@ tree-sitter = "*"
 charset-normalizer = "*"
 tiktoken = "*"
 types-tree-sitter = "*"
-llama-index = "*"
+llama-index = ">= 0.7.12"
 gitpython = "*"
 
 [dev-packages]

@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "40b5d95a65c2d13fb6fbf96762bf2593abf44b1298c19e5bb83924c103ecf662"
+            "sha256": "dd77e1aa335b94dbb4e72c3a8c3803a35a9536ba520eef612459427c1b346795"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -348,11 +348,11 @@
         },
         "langchain": {
             "hashes": [
-                "sha256:110d68116b9bf4eff3aa342a3d6e521f841f9af22fcc02ed52699ada41a46b90",
-                "sha256:698669880d94498ce90f33b28222d46be6297c7b280a399612af7e7a5af39dd6"
+                "sha256:c5907648ae7713a04069d567d51bbcc15cb16b7cf18e5b937c00b2ebbdab780d",
+                "sha256:ea6e09be2c176dab66ac4d060fe1a042ccf12f1b9c66662d55a5efae18139af1"
             ],
             "markers": "python_version < '4.0' and python_full_version >= '3.8.1'",
-            "version": "==0.0.240"
+            "version": "==0.0.242"
         },
         "langsmith": {
             "hashes": [
@@ -364,11 +364,11 @@
         },
         "llama-index": {
             "hashes": [
-                "sha256:08dcfc00e8e9c7b0e2134f48fc801da0fc1640b4bf862c6790db2234c3f8fc87",
-                "sha256:660b0f389ff1046d6569805a718edac1c80d9c6eda1fd12b851e64e4ee06c4f1"
+                "sha256:7e879d7b78bfcde456e55ec6b83882bc6ce69671b87a99c9f5eb09e721af6c03",
+                "sha256:cd76caddea96b9f1f08f849c63e3550ef992490533c5fb1218770fef74ab4fe5"
             ],
             "index": "pypi",
-            "version": "==0.7.11.post1"
+            "version": "==0.7.12"
         },
         "markdown-it-py": {
             "hashes": [

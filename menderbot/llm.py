@@ -17,7 +17,10 @@ MAX_CONTEXT_QUESTIONS = 10
 
 
 def is_test_override() -> bool:
-    return os.getenv("OPENAI_API_KEY") == "test-override"
+    return (
+        os.getenv("OPENAI_API_KEY")
+        == "sk-TEST00000000000000000000000000000000000000000000"
+    )
 
 
 def override_response_for_test(messages) -> str:
