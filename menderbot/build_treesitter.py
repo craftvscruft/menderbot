@@ -1,6 +1,6 @@
 from os.path import abspath, dirname, exists, join, pardir
 
-from setuptools.command.build import build  # type: ignore[import]
+from setuptools.command.build_py import build_py  # type: ignore[import]
 from tree_sitter import Language
 
 ABS_DIRNAME = dirname(abspath(__file__))
@@ -31,12 +31,32 @@ def ensure_tree_sitter_binary() -> str:
     return __TREE_SITTER_BINARY__
 
 
-class MyBuild(build):
+class BuildPy(build_py):
     """Used in setuptools cmdclass"""
 
     def run(self):
         build_tree_sitter_binary()
-        build.run(self)
+        super().run()
+
+
+try:
+    from wheel.bdist_wheel import bdist_wheel  # type: ignore[import]
+
+    class BdistWheel(bdist_wheel):
+        def finalize_options(self):
+            super().finalize_options()
+            # Mark us as not a pure python package
+            # pylint: disable-next=attribute-defined-outside-init
+            self.root_is_pure = False
+
+        # def get_tag(self):
+        #     python, abi, plat = bdist_wheel.get_tag(self)
+        #     # We don't contain any python source, nor any python extensions
+        #     python, abi = 'py2.py3', 'none'
+        #     return python, abi, plat
+
+except ImportError:
+    BdistWheel = None  # type: ignore
 
 
 if __name__ == "__main__":

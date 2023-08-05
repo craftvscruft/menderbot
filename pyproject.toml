@@ -49,12 +49,25 @@ menderbot = "menderbot:cli"
 [tool.setuptools]
 packages = ["menderbot"]
 include-package-data = true # include MANIFEST.in
+# zip-safe = false  # because of the uses of __file__
+platforms = [
+    'Linux',
+    'Mac OSX',
+    'Windows',
+]
 
 [tool.setuptools.dynamic]
 version = {attr = "menderbot.__version__"}
 
 [tool.setuptools.cmdclass]
-build = "menderbot.build_treesitter.MyBuild"
+build_py = "menderbot.build_treesitter.BuildPy"
+bdist_wheel = "menderbot.build_treesitter.BdistWheel"
+
+[tool.distutils.bdist_wheel]
+universal = false
+
+[tool.cibuildwheel.linux]
+repair-wheel-command = "cp {wheel} {dest_dir}" # auditwheel mistakes us for a purelib and won't allow .so
 
 [tool.black]
 exclude = "vendor"
