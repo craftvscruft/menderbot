@@ -1,1 +1,1 @@
-graft vendor/tree-sitter-*
+include menderbot/ext/my-languages.so

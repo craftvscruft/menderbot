@@ -3,21 +3,26 @@
 ![Tests](https://github.com/craftvscruft/menderbot/actions/workflows/ci.yml/badge.svg?branch=main)
 [![License: APACHE](https://img.shields.io/github/license/craftvscruft/menderbot)](https://github.com/craftvscruft/menderbot/blob/main/LICENSE)
 
-> AI-powered command line tool for working with legacy code. Based on the principles of the [Mechanized Mending Manifesto](https://mender.ai/docs/intro).
+> The AI-powered command line tool for working with legacy code. Based on the principles of the [Mechanized Mending Manifesto](https://mender.ai/docs/intro).
+
+## Status
+
+Menderbot is usable in development of itself - a very small codebase. For instance, it's used on this project for first drafts of commit messages, it added most of the type annotations, and chat usually gives relevant answers. On codebases of an interesting size (> 10K lines) there is still much work to do.
 
 ## Commands implemented (-ish):
 
-* `menderbot ask`: Ask a question about a specific piece of code or concept
-* `menderbot chat`: Interactively chat in the context of the current directory
-* `menderbot commit`: Generate an informative commit message based on a changeset
+* `menderbot ask`: Ask a question about the codebase
+* `menderbot chat`: Interactively chat about the codebase
+* `menderbot commit`: Git commit the current changeset with a pre-populated commit message
 * `menderbot diff`: Summarize the differences between two versions of a codebase
 * `menderbot doc`: Generate documentation for the existing code (Python only)
 * `menderbot review`: Review a code block or changeset and provide feedback
 * `menderbot type`: Insert type hints (Python only)
-
+* `menderbot ingest`: Index the current state of the repo for `ask` and `chat` commands
 
 ## System requirements
 
+* git
 * [pipenv](https://pipenv.pypa.io/en/latest/) (for managing Python environments)
 * C Compiler
 * The environment variable `OPENAI_API_KEY` set to a valid OpenAI API Key.
@@ -37,7 +42,7 @@ pipenv shell
 ```
 ### Running
 
-While in the pipenv shell, install editable version.
+Install an editable version.
 ```
 python -m pip install -e .
 ```
