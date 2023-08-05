@@ -14,7 +14,7 @@ keywords = ["ai", "gpt", "refactoring", "legacy", "code"]
 dependencies = [
     "click >= 8.0.0",
     "rich-click >= 1.6.0",
-    "tree-sitter >= 0.20.1, < 0.21.0",
+    "tree-sitter >= 0.20.1, < 0.21.0", # match build-system version
     "charset-normalizer >= 3.2.0",
     "tiktoken",
     "llama-index >= 0.7.12",
@@ -40,35 +40,25 @@ dev = [
 Homepage = "https://github.com/craftvscruft/menderbot"
 
 [build-system]
-requires = ["setuptools>=61.0", "wheel"]
+requires = ["setuptools>=61.0.0", "wheel", "tree-sitter >= 0.20.1, < 0.21.0"]
 build-backend = "setuptools.build_meta"
 
 [project.scripts]
-menderbot = "menderbot.__main__:cli"
+menderbot = "menderbot:cli"
 
 [tool.setuptools]
 packages = ["menderbot"]
+include-package-data = true # include MANIFEST.in
 
 [tool.setuptools.dynamic]
-version = {attr = "menderbot.VERSION"}
+version = {attr = "menderbot.__version__"}
+
+[tool.setuptools.cmdclass]
+build = "menderbot.build_treesitter.MyBuild"
 
 [tool.black]
 exclude = "vendor"
 
-[tool.bumpver]
-current_version = "2023.1001-alpha"
-version_pattern = "YYYY.BUILD[-TAG]"
-commit_message = "bump version {old_version} -> {new_version}"
-tag_message = "{new_version}"
-tag_scope = "default"
-commit = true
-tag = true
-push = true
-
-[tool.bumpver.file_patterns]
-"pyproject.toml" = [
-    'current_version = "{version}"',
-]
 "README.md" = [
     "{version}",
     "{pep440_version}",

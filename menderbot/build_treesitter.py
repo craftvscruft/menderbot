@@ -1,9 +1,10 @@
 from os.path import abspath, dirname, exists, join, pardir
 
+from setuptools.command.build import build  # type: ignore[import]
 from tree_sitter import Language
 
 ABS_DIRNAME = dirname(abspath(__file__))
-BUILD_DIR = abspath(join(ABS_DIRNAME, pardir, "build"))
+BUILD_DIR = abspath(join(ABS_DIRNAME, "ext"))
 VENDOR_DIR = abspath(join(ABS_DIRNAME, pardir, "vendor"))
 __TREE_SITTER_BINARY__ = join(BUILD_DIR, "my-languages.so")
 
@@ -28,6 +29,14 @@ def ensure_tree_sitter_binary() -> str:
         )
         build_tree_sitter_binary()
     return __TREE_SITTER_BINARY__
+
+
+class MyBuild(build):
+    """Used in setuptools cmdclass"""
+
+    def run(self):
+        build_tree_sitter_binary()
+        build.run(self)
 
 
 if __name__ == "__main__":

@@ -5,7 +5,7 @@ from rich.console import Console
 from rich.progress import Progress
 from rich.prompt import Confirm
 
-from menderbot import VERSION
+from menderbot import __version__
 from menderbot.check import run_check
 from menderbot.git_client import git_commit, git_diff_head
 from menderbot.ingest import ask_index, get_chat_engine, index_exists, ingest_repo
@@ -32,7 +32,7 @@ console = Console()
     default=False,
     help="Dry run, do not call API, only output prompts.",
 )
-@click.version_option(VERSION, prog_name="menderbot")
+@click.version_option(__version__, prog_name="menderbot")
 @click.pass_context
 def cli(ctx, debug, dry):
     """
