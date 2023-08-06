@@ -31,6 +31,10 @@ def ensure_tree_sitter_binary() -> str:
     return __TREE_SITTER_BINARY__
 
 
+def tree_sitter_binary_exists() -> bool:
+    return exists(__TREE_SITTER_BINARY__)
+
+
 class BuildPy(build_py):
     """Used in setuptools cmdclass"""
 

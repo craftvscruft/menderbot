@@ -2,8 +2,6 @@ import os
 
 import openai
 
-openai.api_key = os.getenv("OPENAI_API_KEY")
-
 INSTRUCTIONS = (
     """You are helpful electronic assistant with knowledge of Software Engineering."""
 )
@@ -16,11 +14,22 @@ PRESENCE_PENALTY = 0.6
 MAX_CONTEXT_QUESTIONS = 10
 
 
+def key_env_var() -> str:
+    return "OPENAI_API_KEY"
+
+
+openai.api_key = os.getenv(key_env_var())
+
+
 def is_test_override() -> bool:
     return (
-        os.getenv("OPENAI_API_KEY")
+        os.getenv(key_env_var())
         == "sk-TEST00000000000000000000000000000000000000000000"
     )
+
+
+def has_key() -> bool:
+    return os.getenv(key_env_var(), "") != ""
 
 
 def override_response_for_test(messages) -> str:

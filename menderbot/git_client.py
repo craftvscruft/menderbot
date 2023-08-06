@@ -1,5 +1,6 @@
 import subprocess
 import tempfile
+from typing import Optional
 
 
 def git_diff_head(staged=False) -> str:
@@ -17,3 +18,13 @@ def git_commit(message: str) -> None:
         f.seek(0)
         args = ["git", "commit", "--allow-empty", "--template", f.name]
         subprocess.run(args, check=True)
+
+
+def git_show_top_level() -> Optional[str]:
+    try:
+        args = ["git", "rev-parse", "--show-toplevel"]
+        return subprocess.check_output(
+            args, text=True, stderr=subprocess.DEVNULL
+        ).strip()
+    except subprocess.CalledProcessError:
+        return None

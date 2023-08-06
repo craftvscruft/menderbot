@@ -1,4 +1,4 @@
-import os
+import sys
 
 import rich_click as click
 from rich.console import Console
@@ -6,10 +6,20 @@ from rich.progress import Progress
 from rich.prompt import Confirm
 
 from menderbot import __version__
+from menderbot.build_treesitter import (
+    ensure_tree_sitter_binary,
+    tree_sitter_binary_exists,
+)
 from menderbot.check import run_check
-from menderbot.git_client import git_commit, git_diff_head
+from menderbot.git_client import git_commit, git_diff_head, git_show_top_level
 from menderbot.ingest import ask_index, get_chat_engine, index_exists, ingest_repo
-from menderbot.llm import INSTRUCTIONS, get_response, unwrap_codeblock
+from menderbot.llm import (
+    INSTRUCTIONS,
+    get_response,
+    has_key,
+    key_env_var,
+    unwrap_codeblock,
+)
 from menderbot.prompts import (
     change_list_prompt,
     code_review_prompt,
@@ -22,19 +32,9 @@ console = Console()
 
 
 @click.group(context_settings=dict(help_option_names=["-h", "--help"]))
-@click.option(
-    "--debug",
-    default=False,
-    help="Show the debug log messages.",
-)
-@click.option(
-    "--dry",
-    default=False,
-    help="Dry run, do not call API, only output prompts.",
-)
 @click.version_option(__version__, prog_name="menderbot")
 @click.pass_context
-def cli(ctx, debug, dry):
+def cli(ctx):
     """
     An AI-powered command line tool for working with legacy code.
 
@@ -43,12 +43,9 @@ def cli(ctx, debug, dry):
 
     Connects to OpenAI using OPENAI_API_KEY environment variable.
     """
-    del debug
-    # print(f"Debug mode is {'on' if debug else 'off'}")
-    if "OPENAI_API_KEY" not in os.environ:
-        console.log("OPENAI_API_KEY not found in env, will not be able to connect.")
+    if not has_key():
+        console.log(f"{key_env_var()} not found in env, will not be able to connect.")
     ctx.ensure_object(dict)
-    ctx.obj["DRY"] = dry
 
 
 @cli.command()
@@ -265,6 +262,46 @@ def diff():
 def ingest():
     """Index files in current repo to be used with 'ask' and 'chat'."""
     ingest_repo()
+
+
+@click.option(
+    "--build",
+    is_flag=True,
+    default=False,
+    help="Attempt to build Tree-Sitter if not present",
+)
+@cli.command()
+def check(build: bool):
+    """Verify we have what we need to run."""
+    git_dir = git_show_top_level()
+    failed = False
+
+    def check_condition(condition, ok_msg, failed_msg):
+        nonlocal failed
+        if condition:
+            console.print(f"[green]OK[/green]: {ok_msg}")
+        else:
+            console.print(f"[red]Failed[/red]: {failed_msg}")
+            failed = True
+
+    check_condition(
+        git_dir, f"Git repo {git_dir}", "Not in repo directory or git not installed"
+    )
+    check_condition(
+        has_key(),
+        f"OpenAI API key found in {key_env_var()}",
+        f"OpenAI API key not found in {key_env_var()}",
+    )
+    check_condition(
+        tree_sitter_binary_exists(),
+        "Tree-Sitter binary found",
+        "Tree-Sitter binary not found, run check with --build to attempt building",
+    )
+    if build:
+        ensure_tree_sitter_binary()
+
+    if failed:
+        sys.exit(1)
 
 
 if __name__ == "__main__":

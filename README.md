@@ -19,6 +19,7 @@ Menderbot is usable in development of itself - a very small codebase. For instan
 * `menderbot review`: Review a code block or changeset and provide feedback
 * `menderbot type`: Insert type hints (Python only)
 * `menderbot ingest`: Index the current state of the repo for `ask` and `chat` commands
+* `menderbot check`: Verify we have what we need to run
 
 ## System requirements
 
