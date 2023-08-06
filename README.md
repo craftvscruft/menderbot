@@ -40,6 +40,9 @@ Then you can initialize the Python environment using pipenv.
 
 ```
 pipenv shell
+
+# If developing...
+pipenv install --dev
 ```
 ### Running
 

@@ -10,7 +10,6 @@ openai = "*"
 tree-sitter = "*"
 charset-normalizer = "*"
 tiktoken = "*"
-types-tree-sitter = "*"
 llama-index = ">= 0.7.12"
 gitpython = "*"
 
@@ -23,6 +22,8 @@ flake8 = "*"
 isort = "*"
 pre-commit = "*"
 pytest-cov = "*"
+types-PyYAML = "*"
+types-tree-sitter = "*"
 
 [requires]
 python_version = "3.9"

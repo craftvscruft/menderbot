@@ -1,6 +1,7 @@
 import sys
 
 import rich_click as click
+from click import Abort
 from rich.console import Console
 from rich.progress import Progress
 from rich.prompt import Confirm
@@ -11,6 +12,7 @@ from menderbot.build_treesitter import (
     tree_sitter_binary_exists,
 )
 from menderbot.check import run_check
+from menderbot.config import create_default_config, has_config, has_llm_consent
 from menderbot.git_client import git_commit, git_diff_head, git_show_top_level
 from menderbot.ingest import ask_index, get_chat_engine, index_exists, ingest_repo
 from menderbot.llm import (
@@ -55,6 +57,7 @@ def ask(q):
     if not index_exists():
         console.print("[red]Index not found[/red]: please run menderbot ingest")
         return
+    check_llm_consent()
     new_question = q
     if not new_question:
         new_question = console.input("[green]Ask[/green]: ")
@@ -72,6 +75,7 @@ def chat():
         console.print("[red]Index not found[/red]: please run menderbot ingest")
     else:
         console.print("Loading index...")
+    check_llm_consent()
     chat_engine = get_chat_engine()
     while True:
         new_question = console.input("[green]Ask[/green]: ")
@@ -131,6 +135,7 @@ def type_command(file):
     """Insert type hints (Python only)"""
     from menderbot.typing import process_untyped_functions  # Lazy import
 
+    check_llm_consent()
     console.print("Running type-checker baseline")
     (success, check_output) = run_check("mypy")
     if not success:
@@ -194,6 +199,7 @@ def doc(file):
     """Generate function-level documentation for the existing code (Python only)."""
     from menderbot.doc import document_file  # Lazy import
 
+    check_llm_consent()
     source_file = SourceFile(file)
     insertions = document_file(source_file, generate_doc)
     if not insertions:
@@ -209,6 +215,7 @@ def doc(file):
 @cli.command()
 def review():
     """Review a code block or changeset and provide feedback."""
+    check_llm_consent()
     console.print("Reading diff from STDIN...")
     diff_text = click.get_text_stream("stdin").read()
     new_question = code_review_prompt(diff_text)
@@ -222,6 +229,7 @@ def review():
 @cli.command()
 def commit():
     """Generate an informative commit message based on a changeset."""
+    check_llm_consent()
     diff_text = git_diff_head(staged=True)
     new_question = change_list_prompt(diff_text)
     with Progress(transient=True) as progress:
@@ -248,6 +256,7 @@ def diff():
       git diff HEAD | menderbot diff
       git diff main..HEAD | menderbot diff
     """
+    check_llm_consent()
     console.print("Reading diff from STDIN...")
     diff_text = click.get_text_stream("stdin").read()
     new_question = change_list_prompt(diff_text)
@@ -261,7 +270,18 @@ def diff():
 @cli.command()
 def ingest():
     """Index files in current repo to be used with 'ask' and 'chat'."""
+    check_llm_consent()
     ingest_repo()
+
+
+def check_llm_consent():
+    if not has_llm_consent():
+        console.print(
+            "[red]Error[/red]: This repo does not have consent recorded in .menderbot-config.yaml"
+        )
+        if not has_config():
+            create_default_config()
+        raise Abort()
 
 
 @click.option(
@@ -279,27 +299,32 @@ def check(build: bool):
     def check_condition(condition, ok_msg, failed_msg):
         nonlocal failed
         if condition:
-            console.print(f"[green]OK[/green]: {ok_msg}")
+            console.print(f"[green]OK[/green]      {ok_msg}")
         else:
-            console.print(f"[red]Failed[/red]: {failed_msg}")
+            console.print(f"[red]Failed[/red]  {failed_msg}")
             failed = True
 
     check_condition(
         git_dir, f"Git repo {git_dir}", "Not in repo directory or git not installed"
     )
     check_condition(
-        has_key(),
-        f"OpenAI API key found in {key_env_var()}",
-        f"OpenAI API key not found in {key_env_var()}",
-    )
-    check_condition(
         tree_sitter_binary_exists(),
         "Tree-Sitter binary found",
         "Tree-Sitter binary not found, run check with --build to attempt building",
     )
+    check_condition(
+        has_key(),
+        f"OpenAI API key found in {key_env_var()}",
+        f"OpenAI API key not found in {key_env_var()}",
+    )
+
+    check_condition(
+        has_llm_consent(),
+        "LLM consent configured for this repo",
+        "LLM consent not recorded in .menderbot-config.yaml for this repo",
+    )
     if build:
         ensure_tree_sitter_binary()
-
     if failed:
         sys.exit(1)
 
