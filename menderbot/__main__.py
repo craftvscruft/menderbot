@@ -244,7 +244,13 @@ def commit():
 
 @cli.command()
 def diff():
-    """Summarize the differences between two versions of a codebase."""
+    """
+    Summarize the differences between two versions of a codebase. Takes diff from STDIN.
+
+    Try:
+      git diff HEAD | menderbot diff
+      git diff main..HEAD | menderbot diff
+    """
     console.print("Reading diff from STDIN...")
     diff_text = click.get_text_stream("stdin").read()
     new_question = change_list_prompt(diff_text)

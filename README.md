@@ -3,7 +3,7 @@
 ![Tests](https://github.com/craftvscruft/menderbot/actions/workflows/ci.yml/badge.svg?branch=main)
 [![License: APACHE](https://img.shields.io/github/license/craftvscruft/menderbot)](https://github.com/craftvscruft/menderbot/blob/main/LICENSE)
 
-> The AI-powered command line tool for working with legacy code. Based on the principles of the [Mechanized Mending Manifesto](https://mender.ai/docs/intro).
+> The AI-powered command line tool for working with legacy code. [Designed](./DESIGN.md) based on the principles of the [Mechanized Mending Manifesto](https://mender.ai/docs/intro).
 
 ## Status
 
