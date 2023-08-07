@@ -19,7 +19,7 @@ Following these principles, Menderbot aims to:
 
 * LLM output is always labeled
 * Avoid using LLM output in executable code
-* **pending**: Require explicit consent to use LLM on repo
+* Require explicit consent to use LLM on repo
 * **pending**: Price confirmation for batch operations
 
 ### LLM consent

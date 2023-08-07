@@ -59,6 +59,10 @@ class LanguageStrategy(ABC):
     def get_function_nodes(self, tree) -> list:
         pass
 
+    def get_type_imports(self, tree) -> list:
+        del tree
+        return []
+
     @property
     @abstractmethod
     def function_doc_line_offset(self) -> int:
@@ -98,6 +102,21 @@ class PythonLanguageStrategy(LanguageStrategy):
         )
         captures = query.captures(tree.root_node)
         return [capture[0] for capture in captures]
+
+    def get_type_imports(self, tree) -> list[tuple[str, str]]:
+        query = PY_LANGUAGE.query(
+            """
+        (import_from_statement) @function
+        """
+        )
+        captures = query.captures(tree.root_node)
+        return [
+            (node_str(module_name_node), node_str(name_node))
+            for (import_node, _) in captures
+            for module_name_node in import_node.children_by_field_name("module_name")
+            for name_node in import_node.children_by_field_name("name")
+            if node_str(module_name_node) == "typing"
+        ]
 
     function_doc_line_offset = 1
 

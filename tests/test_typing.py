@@ -46,7 +46,7 @@ def foo(a):
     ]
     function_nodes = py_strat.get_function_nodes(tree)
     hints = [("a", "int"), ("return", "None")]
-    insertions = add_type_hints(function_nodes[0], hints)
+    insertions = add_type_hints(tree, function_nodes[0], hints)
 
     assert insertions == expected
     assert list(insert_in_lines(code_lines, insertions)) == expected_lines
@@ -65,7 +65,7 @@ def test_add_type_hints_on_first_line(py_strat):
     ]
     function_nodes = py_strat.get_function_nodes(tree)
     hints = [("a", "int"), ("return", "None")]
-    insertions = add_type_hints(function_nodes[0], hints)
+    insertions = add_type_hints(tree, function_nodes[0], hints)
 
     assert insertions == expected
 
@@ -82,7 +82,7 @@ def test_process_untyped_functions_one_result(py_strat):
     )
     results = list(process_untyped_functions_in_tree(tree, py_strat))
     assert len(results) == 1
-    (_, _, needs_typing) = results[0]
+    (_, _, _, needs_typing) = results[0]
     assert needs_typing == ["a", "return"]
 
 
@@ -94,7 +94,7 @@ def test_process_untyped_functions_excludes_init(py_strat):
     )
     results = list(process_untyped_functions_in_tree(tree, py_strat))
     assert len(results) == 1
-    (_, _, needs_typing) = results[0]
+    (_, _, _, needs_typing) = results[0]
     assert needs_typing == ["a"]
 
 
@@ -130,10 +130,29 @@ def test_try_function_type_hints(py_strat):
         function_node = py_strat.get_function_nodes(tree)[0]
         function_text = node_str(function_node)
         no_hints = try_function_type_hints(
-            source_file, function_node, function_text, []
+            "..mypy..", source_file, tree, function_node, function_text, []
         )
         assert no_hints == []
         one_hint_no_results = try_function_type_hints(
-            source_file, function_node, function_text, ["a"]
+            "..mypy..", source_file, tree, function_node, function_text, ["a"]
         )
         assert one_hint_no_results == []
+
+
+def test_add_typing_imports(py_strat):
+    code = """
+    from typing import Foo, Bar
+    from typing import Baz
+    from otherlib import Quux
+    def foo(a):
+        pass
+    """
+    tree = parse_string_to_tree(
+        code,
+        PY_LANGUAGE,
+    )
+    assert py_strat.get_type_imports(tree) == [
+        ("typing", "Foo"),
+        ("typing", "Bar"),
+        ("typing", "Baz"),
+    ]

@@ -52,7 +52,7 @@ def create_default_config():
         conf_file.write(DEFAULT_CONFIG_YAML)
 
 
-def load_config():
+def load_config() -> dict:
     loader = yaml.SafeLoader
     config_path = get_config_path()
     if not config_path:

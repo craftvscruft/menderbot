@@ -23,13 +23,33 @@ def parse_type_hint_answer(text: str) -> list:
     return [hint for hint in hints if hint[0] != "self" and hint[1].lower() != "any"]
 
 
-def add_type_hints(function_node, hints: list) -> list:
+def add_type_hints(tree, function_node, hints: list) -> list:
     function_name = node_str(function_node.child_by_field_name("name"))
     params_node = function_node.child_by_field_name("parameters")
     return_type_node = function_node.child_by_field_name("return_type")
     insertions = []
+    py_strat = PythonLanguageStrategy()
+    imports = py_strat.get_type_imports(tree)
+    common_typing_import_names = ["Optional", "Callable", "NamedTuple", "Any", "Type"]
+
+    def add_needed_imports(new_type):
+        new_type_symbols = re.findall(r"\b\w+\b", new_type)
+        for new_type_symbol in new_type_symbols:
+            if (
+                new_type_symbol in common_typing_import_names
+                and ("typing", new_type_symbol) not in imports
+            ):
+                imports.append(("typing", new_type_symbol))
+                insertions.append(
+                    Insertion(
+                        text=f"from typing import {new_type_symbol}",
+                        line_number=1,
+                        label="type_import",
+                    )
+                )
 
     for ident, new_type in hints:
+        add_needed_imports(new_type)
         for param_node in params_node.children:
             if param_node.type in ["identifier"] and node_str(param_node) == ident:
                 line = param_node.end_point[0] + 1
@@ -56,6 +76,7 @@ def add_type_hints(function_node, hints: list) -> list:
                     label=function_name,
                 )
             )
+
     return insertions
 
 
@@ -80,7 +101,7 @@ def process_untyped_functions_in_tree(tree, language_strategy):
         needs_typing = [
             node_str(n) for n in params_node.children if n.type in ["identifier"]
         ]
-        needs_typing = [n for n in needs_typing if n != "self"]
+        needs_typing = [n for n in needs_typing if n not in ["self", "cls"]]
         # Add "default_parameter" later probably.
         return_type_text = ""
         if return_type_node:
@@ -94,7 +115,7 @@ def process_untyped_functions_in_tree(tree, language_strategy):
         if needs_typing:
             function_text = node_str(node)
             # Should make an object
-            yield (node, function_text, needs_typing)
+            yield (tree, node, function_text, needs_typing)
 
         # https://github.com/tree-sitter/tree-sitter-python/blob/master/grammar.js
         # print(node.sexp())

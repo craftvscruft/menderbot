@@ -18,7 +18,7 @@ repos:
       - id: mypy
         name: mypy
         stages: [commit]
-        language: python
+        language: system
         entry: pipenv run mypy
         types: [python]
         pass_filenames: false

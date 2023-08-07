@@ -2,6 +2,8 @@ import os
 
 import openai
 
+from menderbot.config import has_llm_consent, load_config
+
 INSTRUCTIONS = (
     """You are helpful electronic assistant with knowledge of Software Engineering."""
 )
@@ -13,12 +15,29 @@ PRESENCE_PENALTY = 0.6
 # limits how many questions we include in the prompt
 MAX_CONTEXT_QUESTIONS = 10
 
+__key_env_var = "OPENAI_API_KEY"
+
 
 def key_env_var() -> str:
-    return "OPENAI_API_KEY"
+    return __key_env_var
 
 
-openai.api_key = os.getenv(key_env_var())
+def init_openai():
+    # pylint: disable-next=[global-statement]
+    global __key_env_var
+    if has_llm_consent():
+        config = load_config()
+        openai_config = config.get("apis", {}).get("openai", {})
+        __key_env_var = openai_config.get("api_key_env_var", "OPENAI_API_KEY")
+        organization_env_var = openai_config.get(
+            "organization_env_var", "OPENAI_ORGANIZATION"
+        )
+        openai.api_key = os.getenv(__key_env_var)
+        openai.api_base = openai_config.get("api_base", "https://api.openai.com/v1")
+        openai.organization = os.getenv(organization_env_var)
+
+
+init_openai()
 
 
 def is_test_override() -> bool:

@@ -88,20 +88,22 @@ def chat():
             console.out("\n")
 
 
-def try_function_type_hints(source_file, function_node, function_text, needs_typing):
+def try_function_type_hints(
+    mypy_cmd, source_file, tree, function_node, function_text, needs_typing
+):
     from menderbot.typing import add_type_hints, parse_type_hint_answer  # Lazy import
 
-    mypy_args = "--no-error-summary --soft-error-limit 10"
     check_command = (
-        f"mypy {mypy_args} --shadow-file {source_file.path} {source_file.path}.shadow"
+        f"{mypy_cmd} --shadow-file {source_file.path} {source_file.path}.shadow"
     )
     max_tries = 2
     check_output = None
     # First set them all to wrong type, to produce an error message.
     hints = [(ident, "None") for ident in needs_typing]
-    insertions_for_function = add_type_hints(function_node, hints)
+    insertions_for_function = add_type_hints(tree, function_node, hints)
     if insertions_for_function:
         source_file.update_file(insertions_for_function, suffix=".shadow")
+        console.print("> ", check_command)
         (success, pre_check_output) = run_check(check_command)
         if not success:
             check_output = pre_check_output
@@ -112,7 +114,7 @@ def try_function_type_hints(source_file, function_node, function_text, needs_typ
         answer = get_response_with_progress(INSTRUCTIONS, [], prompt)
         hints = parse_type_hint_answer(answer)
 
-        insertions_for_function = add_type_hints(function_node, hints)
+        insertions_for_function = add_type_hints(tree, function_node, hints)
         if insertions_for_function:
             console.print(f"[cyan]Bot[/cyan]: {hints}")
             source_file.update_file(insertions_for_function, suffix=".shadow")
@@ -121,7 +123,8 @@ def try_function_type_hints(source_file, function_node, function_text, needs_typ
                 console.print("[green]Type checker passed[/green], keeping")
                 return insertions_for_function
             else:
-                console.print("[red]Type checker failed[/red], discarding")
+                console.out(check_output)
+                console.print("\n[red]Type checker failed[/red], discarding")
         else:
             console.print("[cyan]Bot[/cyan]: No changes")
             # No retry if it didn't try to hint anything.
@@ -137,18 +140,19 @@ def type_command(file):
 
     check_llm_consent()
     console.print("Running type-checker baseline")
-    (success, check_output) = run_check("mypy")
+    mypy_cmd = f"mypy --ignore-missing-imports --no-error-summary --soft-error-limit 10 '{file}'"
+    (success, check_output) = run_check(f"{mypy_cmd}")
     if not success:
         console.print(check_output)
         console.print("Baseline failed, aborting.")
         return
     source_file = SourceFile(file)
     insertions = []
-    for function_node, function_text, needs_typing in process_untyped_functions(
+    for tree, function_node, function_text, needs_typing in process_untyped_functions(
         source_file
     ):
         insertions += try_function_type_hints(
-            source_file, function_node, function_text, needs_typing
+            mypy_cmd, source_file, tree, function_node, function_text, needs_typing
         )
     if not insertions:
         console.print(f"No changes for '{file}.")
