@@ -20,20 +20,19 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
-          cache: 'pipenv'
-      - name: Install pipenv and build deps
+          cache: 'pip'
+      - name: Install build deps
         run: |
-          python -m pip install --upgrade pipenv wheel build
+          pip install --upgrade wheel build
       - name: Install dependencies
-        if: steps.cache-pipenv.outputs.cache-hit != 'true'
         run: |
-          pipenv install --deploy --dev
+          pip install "." ".[dev]"
       - name: tests
         run: |
-          pipenv run pytest --cov --cov-fail-under=50
+          python -m pytest --cov --cov-fail-under=50
       - name: type-checking
         run: |
-          pipenv run mypy menderbot
+          python -m mypy menderbot
       - name: build whl
         run: |
           python -m build

@@ -24,8 +24,22 @@ Menderbot is usable in development of itself - a very small codebase. For instan
 ## System requirements
 
 * git
-* [pipenv](https://pipenv.pypa.io/en/latest/) (for managing Python environments)
+* Python 3.9+
 * The environment variable `OPENAI_API_KEY` set to a valid OpenAI API Key.
+
+### Running
+Clone the project...
+
+Install an editable version.
+```
+python -m pip install -e .
+```
+
+Then run with `menderbot` in any repo.
+
+### Installing from Pip
+
+Not yet supported, install from a local checkout for now. Upvote this [issue](https://github.com/craftvscruft/menderbot/issues/1) if you're interested.
 
 ## Developing
 
@@ -35,29 +49,17 @@ Clone the project...
 git clone git@github.com:craftvscruft/menderbot.git
 ```
 
-Then you can initialize the Python environment using pipenv.
+Then you can initialize your Python environment using [venv](https://docs.python.org/3/library/venv.html).
 
 ```
-pipenv shell
+python -m venv venv
 
-pipenv install --dev
+source venv/bin/activate
+
+pip install "." ".[dev]"
 ```
 
 If you want to re-generate the Antlr parsers, see [PARSERS.md](./PARSERS.md), but you probably won't need to.
-
-
-### Running
-
-Install an editable version.
-```
-python -m pip install -e .
-```
-
-Then run with `menderbot`.
-
-### Installing
-
-Not yet supported, run within pipenv on a local checkout for now. Upvote this [issue](https://github.com/craftvscruft/menderbot/issues/1) if you're interested.
 
 ### Pre-commit
 
