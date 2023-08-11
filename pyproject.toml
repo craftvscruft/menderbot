@@ -48,8 +48,7 @@ menderbot = "menderbot:cli"
 
 [tool.setuptools]
 packages = ["menderbot"]
-include-package-data = true # include MANIFEST.in
-# zip-safe = false  # because of the uses of __file__
+
 platforms = [
     'Linux',
     'Mac OSX',
