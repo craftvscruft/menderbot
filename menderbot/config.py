@@ -21,12 +21,8 @@ apis:
     openai:
         enabled: yes
         api_key_env_var: OPENAI_API_KEY
-        models:
-        - gpt-4
-        - gpt-4-32k
-        - gpt-3.5-turbo
-        - gpt-3.5-turbo-16k
-        - text-embedding-ada-002
+        # organization_env_var: OPENAI_ORGANIZATION
+        # api_base: https://api.openai.com/v1
 """
 
 

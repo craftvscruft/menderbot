@@ -33,7 +33,7 @@ def document_file(source_file: SourceFile, doc_gen: Callable) -> list[Insertion]
     insertions = []
     for node in language_strategy.get_function_nodes(tree):
         if not language_strategy.function_has_comment(node):
-            name = language_strategy.get_node_declarator_name(node)
+            name = language_strategy.get_function_node_name(node)
             logger.info('Found undocumented function "%s"', name)
             code = str(node.text, encoding="utf-8")
             comment = doc_gen(code, file_extension)

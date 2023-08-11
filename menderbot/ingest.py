@@ -1,8 +1,10 @@
 import glob
 import os
+from os.path import splitext
 
 from git import Repo
 from llama_index import (
+    OpenAIEmbedding,
     ServiceContext,
     SimpleDirectoryReader,
     StorageContext,
@@ -29,17 +31,38 @@ def delete_index(persist_dir: str) -> None:
         map(os.remove, glob.glob(os.path.join(persist_dir, "*.json")))
 
 
+def is_path_included(path: str) -> bool:
+    excluded_paths = ["Pipfile.lock"]
+    included_extensions = [
+        ".md",
+        ".java",
+        ".c",
+        ".cpp",
+        ".cc",
+        ".py",
+        ".txt",
+        ".yaml",
+        ".go",
+        ".sh",
+        ".js",
+        ".ts",
+        ".tsx",
+    ]
+    _, ext = splitext(path)
+    return path not in excluded_paths and ext.lower() in included_extensions
+
+
 def ingest_repo(replace=False) -> None:
     if replace:
         delete_index(PERSIST_DIR)
-    excluded_paths = ["Pipfile.lock"]
+
     repo = Repo(".")
     commit = repo.commit("HEAD")
 
     file_paths = [
         item.path  # type: ignore
         for item in commit.tree.traverse()
-        if item.type == "blob" and item.path not in excluded_paths  # type: ignore
+        if item.type == "blob" and is_path_included(item.path)  # type: ignore
     ]
 
     def filename_fn(filename: str) -> dict:
@@ -78,7 +101,9 @@ def get_llm():
 
 
 def get_service_context() -> ServiceContext:
-    return ServiceContext.from_defaults(llm=get_llm())
+    return ServiceContext.from_defaults(
+        llm=get_llm(), embed_model=OpenAIEmbedding(model="text-embedding-ada-002")
+    )
 
 
 def get_query_engine():

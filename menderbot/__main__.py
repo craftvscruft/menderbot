@@ -7,10 +7,6 @@ from rich.progress import Progress
 from rich.prompt import Confirm
 
 from menderbot import __version__
-from menderbot.build_treesitter import (
-    ensure_tree_sitter_binary,
-    tree_sitter_binary_exists,
-)
 from menderbot.check import run_check
 from menderbot.config import create_default_config, has_config, has_llm_consent
 from menderbot.git_client import git_commit, git_diff_head, git_show_top_level
@@ -288,14 +284,8 @@ def check_llm_consent():
         raise Abort()
 
 
-@click.option(
-    "--build",
-    is_flag=True,
-    default=False,
-    help="Attempt to build Tree-Sitter if not present",
-)
 @cli.command()
-def check(build: bool):
+def check():
     """Verify we have what we need to run."""
     git_dir = git_show_top_level()
     failed = False
@@ -312,11 +302,6 @@ def check(build: bool):
         git_dir, f"Git repo {git_dir}", "Not in repo directory or git not installed"
     )
     check_condition(
-        tree_sitter_binary_exists(),
-        "Tree-Sitter binary found",
-        "Tree-Sitter binary not found, run check with --build to attempt building",
-    )
-    check_condition(
         has_key(),
         f"OpenAI API key found in {key_env_var()}",
         f"OpenAI API key not found in {key_env_var()}",
@@ -327,8 +312,6 @@ def check(build: bool):
         "LLM consent configured for this repo",
         "LLM consent not recorded in .menderbot-config.yaml for this repo",
     )
-    if build:
-        ensure_tree_sitter_binary()
     if failed:
         sys.exit(1)
 

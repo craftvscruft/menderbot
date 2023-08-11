@@ -56,6 +56,10 @@ def override_response_for_test(messages) -> str:
     return "<LLM Output>"
 
 
+def is_debug():
+    return os.getenv("DEBUG_LLM", "0") == "1"
+
+
 def get_response(
     instructions: str, previous_questions_and_answers: list, new_question: str
 ) -> str:
@@ -80,6 +84,11 @@ def get_response(
     # add the new question
     messages.append({"role": "user", "content": new_question})
 
+    if is_debug():
+        print("=== sending to LLM ===")
+        for message in messages:
+            print(message["role"], message["content"])
+        print("===")
     if is_test_override():
         return override_response_for_test(messages)
     completion = openai.ChatCompletion.create(

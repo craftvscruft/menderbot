@@ -9,7 +9,7 @@ def test_line_indent_spaces():
     assert line_indent(source) == expected
 
 
-def test_line_indent_spaces():
+def test_line_indent_tabs():
     source = """\tdef foo():\n\t\tpass"""
     expected = "\t"
 

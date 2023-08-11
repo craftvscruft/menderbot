@@ -1,5 +1,5 @@
 # Menderbot
-![Version](https://img.shields.io/badge/version-0.0.1-blue.svg?cacheSeconds=2592000)
+![Version](https://img.shields.io/badge/version-0.0.2-blue.svg?cacheSeconds=2592000)
 ![Tests](https://github.com/craftvscruft/menderbot/actions/workflows/ci.yml/badge.svg?branch=main)
 [![License: APACHE](https://img.shields.io/github/license/craftvscruft/menderbot)](https://github.com/craftvscruft/menderbot/blob/main/LICENSE)
 
@@ -25,15 +25,14 @@ Menderbot is usable in development of itself - a very small codebase. For instan
 
 * git
 * [pipenv](https://pipenv.pypa.io/en/latest/) (for managing Python environments)
-* C Compiler
 * The environment variable `OPENAI_API_KEY` set to a valid OpenAI API Key.
 
 ## Developing
 
-This project uses [git submodules](https://git-scm.com/book/en/v2/Git-Tools-Submodules) for the parser grammars, so you'll want to clone it this way.
+Clone the project...
 
 ```
-git clone --recurse-submodules git@github.com:craftvscruft/menderbot.git
+git clone git@github.com:craftvscruft/menderbot.git
 ```
 
 Then you can initialize the Python environment using pipenv.
@@ -41,9 +40,12 @@ Then you can initialize the Python environment using pipenv.
 ```
 pipenv shell
 
-# If developing...
 pipenv install --dev
 ```
+
+If you want to re-generate the Antlr parsers, see [PARSERS.md](./PARSERS.md), but you probably won't need to.
+
+
 ### Running
 
 Install an editable version.
@@ -102,7 +104,7 @@ Give a ⭐️ if this project helped you!
 
 * [OpenAI](https://platform.openai.com/docs/models/overview) GPT and Ada models
 * [LlamaIndex](https://gpt-index.readthedocs.io/en/latest/), an LLM data framework
-* [tree-sitter](https://tree-sitter.github.io/tree-sitter/) parser library
+* [Antlr](https://www.antlr.org/) parser generator
 
 ## 📝 License
 

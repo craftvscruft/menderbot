@@ -1,3 +1,4 @@
+exclude: '^menderbot/antlr_generated/.*$'
 repos:
   - repo: local
     hooks:
@@ -19,7 +20,7 @@ repos:
         name: mypy
         stages: [commit]
         language: system
-        entry: pipenv run mypy
+        entry: pipenv run mypy menderbot
         types: [python]
         pass_filenames: false
 
