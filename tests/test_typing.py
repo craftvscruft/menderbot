@@ -2,11 +2,9 @@ from typing import Iterable
 from unittest.mock import patch
 
 import pytest
-from tree_sitter import Language
 
 from menderbot.__main__ import try_function_type_hints
-from menderbot.build_treesitter import ensure_tree_sitter_binary
-from menderbot.code import PythonLanguageStrategy, parse_source_to_tree
+from menderbot.code import LanguageStrategy, PythonLanguageStrategy
 from menderbot.source_file import Insertion, SourceFile, insert_in_lines
 from menderbot.typing import (
     add_type_hints,
@@ -15,18 +13,15 @@ from menderbot.typing import (
     process_untyped_functions_in_tree,
 )
 
-TREE_SITTER_BINARY = ensure_tree_sitter_binary()
-PY_LANGUAGE = Language(TREE_SITTER_BINARY, "python")
-
 
 @pytest.fixture
 def py_strat():
     return PythonLanguageStrategy()
 
 
-def parse_string_to_tree(str, lang):
+def parse_string_to_tree(str, lang_strat: LanguageStrategy):
     source_bytes = bytes(str, "utf-8")
-    return parse_source_to_tree(source_bytes, lang)
+    return lang_strat.parse_source_to_tree(source_bytes)
 
 
 def test_add_type_hints(py_strat):
@@ -38,7 +33,7 @@ def foo(a):
     expected_lines = ["\n", "def foo(a: int) -> None:\n", "    pass\n"]
     tree = parse_string_to_tree(
         code,
-        PY_LANGUAGE,
+        py_strat,
     )
     expected = [
         Insertion(text=": int", line_number=2, col=9, inline=True, label="foo"),
@@ -57,7 +52,7 @@ def test_add_type_hints_on_first_line(py_strat):
         """def foo(a):
     pass
 """,
-        PY_LANGUAGE,
+        py_strat,
     )
     expected = [
         Insertion(text=": int", line_number=1, col=9, inline=True, label="foo"),
@@ -78,7 +73,7 @@ def test_process_untyped_functions_one_result(py_strat):
     tree = parse_string_to_tree(
         """def foo(a):
     pass""",
-        PY_LANGUAGE,
+        py_strat,
     )
     results = list(process_untyped_functions_in_tree(tree, py_strat))
     assert len(results) == 1
@@ -90,7 +85,7 @@ def test_process_untyped_functions_excludes_init(py_strat):
     tree = parse_string_to_tree(
         """def __init__(a):
     pass""",
-        PY_LANGUAGE,
+        py_strat,
     )
     results = list(process_untyped_functions_in_tree(tree, py_strat))
     assert len(results) == 1
@@ -111,12 +106,12 @@ class MockSourceFile(SourceFile):
 
 def test_try_function_type_hints(py_strat):
     code = """
-    def foo(a):
-        pass
+def foo(a):
+    pass
     """
     tree = parse_string_to_tree(
         code,
-        PY_LANGUAGE,
+        py_strat,
     )
     expected = [
         Insertion(text=": int", line_number=2, col=9, inline=True, label="foo"),
@@ -139,20 +134,56 @@ def test_try_function_type_hints(py_strat):
         assert one_hint_no_results == []
 
 
-def test_add_typing_imports(py_strat):
-    code = """
-    from typing import Foo, Bar
-    from typing import Baz
-    from otherlib import Quux
-    def foo(a):
-        pass
+def test_indented_function(py_strat):
     """
+    Currently a function too deeply indented will not parse as a function.
+    This test documents that, in case we decide to change it.
+    """
+    code = """\n    def foo(a):\n        pass"""
     tree = parse_string_to_tree(
         code,
-        PY_LANGUAGE,
+        py_strat,
     )
-    assert py_strat.get_type_imports(tree) == [
+
+    function_nodes = py_strat.get_function_nodes(tree)
+
+    assert len(function_nodes) == 0
+
+
+def test_get_from_imports(py_strat):
+    code = """
+from typing import Foo, Bar
+from typing import Baz
+from otherlib import Quux
+def foo(a):
+    pass
+"""
+    tree = parse_string_to_tree(
+        code,
+        py_strat,
+    )
+    assert py_strat.get_imports(tree) == [
         ("typing", "Foo"),
         ("typing", "Bar"),
         ("typing", "Baz"),
+        ("otherlib", "Quux"),
+    ]
+
+
+def test_get_non_from_imports(py_strat):
+    code = """
+import typing
+import typing.Foo
+import foo.Bar as Baz
+def foo(a):
+    pass
+"""
+    tree = parse_string_to_tree(
+        code,
+        py_strat,
+    )
+    assert py_strat.get_imports(tree) == [
+        ("", "typing"),
+        ("", "typing.Foo"),
+        ("", "foo.Bar as Baz"),
     ]

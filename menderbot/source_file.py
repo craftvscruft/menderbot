@@ -26,6 +26,7 @@ def partition(pred, iterable):
 
 
 def insert_in_lines(lines: Iterable[str], insertions: Iterable[Insertion]):
+    print("INSERTION", insertions)
     lines = iter(lines)
     last_line = 1
     insertion_groups = itertools.groupby(insertions, key=lambda ins: ins.line_number)

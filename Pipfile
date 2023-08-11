@@ -7,11 +7,11 @@ name = "pypi"
 click = "*"
 rich-click = "*"
 openai = "*"
-tree-sitter = "*"
 charset-normalizer = "*"
 tiktoken = "*"
 llama-index = ">= 0.7.12"
 gitpython = "*"
+antlr4-python3-runtime = "*"
 
 [dev-packages]
 black = "*"
@@ -23,7 +23,6 @@ isort = "*"
 pre-commit = "*"
 pytest-cov = "*"
 types-PyYAML = "*"
-types-tree-sitter = "*"
 
 [requires]
 python_version = "3.9"

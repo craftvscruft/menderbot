@@ -14,12 +14,12 @@ keywords = ["ai", "gpt", "refactoring", "legacy", "code"]
 dependencies = [
     "click >= 8.0.0",
     "rich-click >= 1.6.0",
-    "tree-sitter >= 0.20.1, < 0.21.0", # match build-system version
     "charset-normalizer >= 3.2.0",
     "tiktoken",
     "llama-index >= 0.7.12",
     "rich-click",
-    "gitpython"
+    "gitpython",
+    "antlr4-python3-runtime"
 ]
 requires-python = ">=3.9"
 
@@ -40,7 +40,7 @@ dev = [
 Homepage = "https://github.com/craftvscruft/menderbot"
 
 [build-system]
-requires = ["setuptools>=61.0.0", "wheel", "tree-sitter >= 0.20.1, < 0.21.0"]
+requires = ["setuptools>=61.0.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project.scripts]
@@ -59,21 +59,25 @@ platforms = [
 [tool.setuptools.dynamic]
 version = {attr = "menderbot.__version__"}
 
-[tool.setuptools.cmdclass]
-build_py = "menderbot.build_treesitter.BuildPy"
-bdist_wheel = "menderbot.build_treesitter.BdistWheel"
-
-[tool.distutils.bdist_wheel]
-universal = false
-
-[tool.cibuildwheel.linux]
-repair-wheel-command = "cp {wheel} {dest_dir}" # auditwheel mistakes us for a purelib and won't allow .so
-
 [tool.black]
 exclude = "vendor"
+extend-exclude = "menderbot/antlr_generated"
 
 "README.md" = [
     "{version}",
     "{pep440_version}",
 ]
 
+[tool.pylint.main]
+ignore-paths = ["vendor|vendor", "menderbot\\\\antlr_generated|menderbot/antlr_generated"]
+
+[tool.mypy]
+python_version = 3.9
+
+[[tool.mypy.overrides]]
+module = [
+    'vendor.*',
+    'menderbot.antlr_generated.*'
+]
+ignore_errors = true
+ignore_missing_imports = true

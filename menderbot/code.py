@@ -1,16 +1,27 @@
 from abc import ABC, abstractmethod
 
-from tree_sitter import Language, Parser
+from antlr4 import InputStream  # type: ignore
+from antlr4 import CommonTokenStream, ParserRuleContext, ParseTreeWalker
+from antlr4.Token import CommonToken  # type: ignore
 
-from menderbot.build_treesitter import ensure_tree_sitter_binary
-
-TREE_SITTER_BINARY = ensure_tree_sitter_binary()
-CPP_LANGUAGE = Language(TREE_SITTER_BINARY, "cpp")
-PY_LANGUAGE = Language(TREE_SITTER_BINARY, "python")
+from menderbot.antlr_generated.PythonLexer import PythonLexer  # type: ignore
+from menderbot.antlr_generated.PythonParser import PythonParser  # type: ignore
+from menderbot.antlr_generated.PythonParserListener import (  # type: ignore
+    PythonParserListener,
+)
 
 
 def node_str(node) -> str:
-    return str(node.text, encoding="utf-8")
+    return get_text_including_whitespace(node)
+
+
+def get_text_including_whitespace(ctx: ParserRuleContext):
+    start: CommonToken = ctx.start
+    stop: CommonToken = ctx.stop
+    start_idx: int = start.start
+    stop_idx: int = stop.stop
+    stream: InputStream = start.getInputStream()
+    return stream.getText(start_idx, stop_idx)
 
 
 def line_indent(line: str) -> str:
@@ -35,13 +46,6 @@ def reindent(text: str, indent: str) -> str:
     return "\n".join(indented_lines)
 
 
-def parse_source_to_tree(source: bytes, language: Language):
-    parser = Parser()
-    parser.set_language(language)
-
-    return parser.parse(source)
-
-
 class LanguageStrategy(ABC):
     @abstractmethod
     def function_has_comment(self, node) -> bool:
@@ -52,14 +56,10 @@ class LanguageStrategy(ABC):
         pass
 
     @abstractmethod
-    def get_node_declarator_name(self, node) -> str:
-        pass
-
-    @abstractmethod
     def get_function_nodes(self, tree) -> list:
         pass
 
-    def get_type_imports(self, tree) -> list:
+    def get_imports(self, tree) -> list:
         del tree
         return []
 
@@ -70,86 +70,110 @@ class LanguageStrategy(ABC):
 
 
 class PythonLanguageStrategy(LanguageStrategy):
-    def function_has_comment(self, node) -> bool:
+    def function_has_comment(self, node: PythonParser.FuncdefContext) -> bool:
         """Checks if function has a docstring. Example node:
         (function_definition name: (identifier) parameters: (parameters)
            body: (block (expression_statement
              (string string_content: (string_content))) (pass_statement)))
         """
-        body_node = node.child_by_field_name("body")
-        if body_node and body_node.type == "block":
-            if (
-                body_node.child_count > 0
-                and body_node.children[0].type == "expression_statement"
-            ):
-                expression_statement_node = body_node.children[0]
-                if expression_statement_node.child_count > 0:
-                    return expression_statement_node.children[0].type == "string"
+        body_node: PythonParser.SuiteContext = node.suite()
+        if body_node:
+            # https://peps.python.org/pep-0257/
+            first_stmt_node: PythonParser.StmtContext = body_node.stmt(0)
+            first_stmt_text = first_stmt_node.getText().strip()
+            has_doc_prefix = (
+                first_stmt_text.startswith('"""')
+                or first_stmt_text.startswith('r"""')
+                or first_stmt_text.startswith('u"""')
+            )
+
+            has_doc_suffix = first_stmt_text.endswith('"""')
+            return has_doc_prefix and has_doc_suffix
         return False
 
     def parse_source_to_tree(self, source: bytes):
-        return parse_source_to_tree(source, PY_LANGUAGE)
+        input_stream = InputStream(str(source, encoding="utf-8") + "\n")
+        lexer = PythonLexer(input_stream)
+        token_stream = CommonTokenStream(lexer)
+        parser = PythonParser(token_stream)
+        return parser.file_input()
 
-    def get_node_declarator_name(self, node) -> str:
-        name_node = node.child_by_field_name("name")
-        return str(name_node.text, encoding="utf-8")
+    def get_function_nodes(self, tree) -> list[PythonParser.FuncdefContext]:
+        function_nodes: list[PythonParser.FuncdefContext] = []
 
-    def get_function_nodes(self, tree) -> list:
-        query = PY_LANGUAGE.query(
-            """
-        (function_definition name: (identifier)) @function
-        """
-        )
-        captures = query.captures(tree.root_node)
-        return [capture[0] for capture in captures]
+        class MyListener(PythonParserListener):
+            def enterFuncdef(self, ctx: PythonParser.FuncdefContext):
+                function_nodes.append(ctx)
+                # print(ctx.toStringTree(recog=parser))
 
-    def get_type_imports(self, tree) -> list[tuple[str, str]]:
-        query = PY_LANGUAGE.query(
-            """
-        (import_from_statement) @function
-        """
-        )
-        captures = query.captures(tree.root_node)
-        return [
-            (node_str(module_name_node), node_str(name_node))
-            for (import_node, _) in captures
-            for module_name_node in import_node.children_by_field_name("module_name")
-            for name_node in import_node.children_by_field_name("name")
-            if node_str(module_name_node) == "typing"
-        ]
+        walker = ParseTreeWalker()
+        walker.walk(MyListener(), tree)
+        return function_nodes
+
+    def get_function_node_name(self, node):
+        name_node: PythonParser.NameContext = node.name()
+        name = name_node.getText()
+        return name
+
+    def get_imports(self, tree) -> list[tuple[str, str]]:
+        results: list[tuple[str, str]] = []
+
+        class MyListener(PythonParserListener):
+            def enterFrom_stmt(self, ctx: PythonParser.From_stmtContext):
+                dotted_name_ctx: PythonParser.Dotted_nameContext = ctx.dotted_name()
+                import_as_names_ctx: PythonParser.Import_as_namesContext = (
+                    ctx.import_as_names()
+                )
+                import_as_name_ctxs: list[
+                    PythonParser.Import_as_nameContext
+                ] = import_as_names_ctx.import_as_name()
+                # print(type(import_as_name_ctxs))
+                for import_as_name_ctx in import_as_name_ctxs:
+                    results.append(
+                        (dotted_name_ctx.getText(), node_str(import_as_name_ctx))
+                    )
+                # print(ctx.toStringTree(recog=parser))
+
+            def enterImport_stmt(self, ctx: PythonParser.Import_stmtContext):
+                dotted_as_names_ctx: PythonParser.Dotted_as_namesContext = (
+                    ctx.dotted_as_names()
+                )
+                dotted_as_name_ctxs: list[
+                    PythonParser.Dotted_nameContext
+                ] = dotted_as_names_ctx.dotted_as_name()
+                for dottedAsNameCtx in dotted_as_name_ctxs:
+                    results.append(("", node_str(dottedAsNameCtx)))
+
+        walker = ParseTreeWalker()
+        walker.walk(MyListener(), tree)
+        return results
 
     function_doc_line_offset = 1
 
 
-class CppLanguageStrategy(LanguageStrategy):
-    def function_has_comment(self, node) -> bool:
-        return node.prev_sibling.type in ["comment"]
-
-    def parse_source_to_tree(self, source: bytes):
-        return parse_source_to_tree(source, CPP_LANGUAGE)
-
-    def get_node_declarator_name(self, node) -> str:
-        declarator_node = node.child_by_field_name("declarator")
-        while declarator_node.child_by_field_name("declarator"):
-            declarator_node = declarator_node.child_by_field_name("declarator")
-        return str(declarator_node.text, encoding="utf-8")
-
-    def get_function_nodes(self, tree) -> list:
-        query = CPP_LANGUAGE.query(
-            """
-        [
-            (function_definition) @function
-        ]
-        """
-        )
-        captures = query.captures(tree.root_node)
-        return [capture[0] for capture in captures]
-
-    function_doc_line_offset = 0
+# class CppLanguageStrategy(LanguageStrategy):
+#     def function_has_comment(self, node) -> bool:
+#         return node.prev_sibling.type in ["comment"]
+#
+#     def parse_source_to_tree(self, source: bytes):
+#         return parse_source_to_tree(source, CPP_LANGUAGE)
+#
+#     def get_function_nodes(self, tree) -> list:
+#         query = CPP_LANGUAGE.query(
+#             """
+#         [
+#             (function_definition) @function
+#         ]
+#         """
+#         )
+#         captures = query.captures(tree.root_node)
+#         return [capture[0] for capture in captures]
+#
+#     function_doc_line_offset = 0
 
 
 LANGUAGE_STRATEGIES = {
     ".py": PythonLanguageStrategy(),
-    ".c": CppLanguageStrategy(),
-    ".cpp": CppLanguageStrategy(),
+    # ".c": CppLanguageStrategy(),
+    # ".cpp": CppLanguageStrategy(),
 }
