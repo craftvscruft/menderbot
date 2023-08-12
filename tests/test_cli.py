@@ -1,7 +1,7 @@
 import pytest
 from click.testing import CliRunner
 
-from menderbot.__main__ import ask, cli
+from menderbot.cli import ask, cli
 
 
 @pytest.fixture

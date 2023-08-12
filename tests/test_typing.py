@@ -3,7 +3,7 @@ from unittest.mock import patch
 
 import pytest
 
-from menderbot.__main__ import try_function_type_hints
+from menderbot.cli_helper import try_function_type_hints
 from menderbot.code import LanguageStrategy, PythonLanguageStrategy
 from menderbot.source_file import Insertion, SourceFile, insert_in_lines
 from menderbot.typing import (

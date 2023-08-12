@@ -1,11 +1,12 @@
 from os.path import exists, join
+from typing import Optional
 
 import yaml
 
 from menderbot.git_client import git_show_top_level
 
 
-def get_config_path():
+def get_config_path() -> Optional[str]:
     git_path = git_show_top_level()
     if not git_path:
         return None
@@ -35,9 +36,9 @@ def has_config():
     return config_path and exists(get_config_path())
 
 
-def create_default_config(message="Writing default config"):
+def create_default_config(message="Writing default config") -> None:
     config_path = get_config_path()
-    if exists(config_path):
+    if config_path and exists(config_path):
         # Should not have been called when file exists
         return
     if not config_path:
