@@ -1,0 +1,29 @@
+[version]
+current = "0.0.3-pre"
+regex = '''
+  (?P<major>\d+)
+  \.
+  (?P<minor>\d+)
+  \.
+  (?P<patch>\d+)
+  (\-
+    (?P<extra>.+)
+  )?
+
+'''
+
+[git]
+message_template = "Bump to {new_version}"
+tag_template = "v{new_version}"
+
+[[before_commit]]
+name = "Check Changelog"
+cmd = "grep -q -F {new_version} Changelog.rst"
+
+[[file]]
+src = "menderbot/__init__.py"
+search = "{current_version}"
+
+[[file]]
+src = "README.md"
+search = "version-{current_version}-"
