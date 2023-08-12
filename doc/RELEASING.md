@@ -2,25 +2,30 @@
 
 If you are a member of the Craft vs Cruft org, you can release Menderbot using git [tags](https://git-scm.com/book/en/v2/Git-Basics-Tagging).
 
-```
-export MENDERBOT_VERSION=`./venv/bin/python -c "import menderbot; print(menderbot.__version__)"`
-echo $MENDERBOT_VERSION
-```
-
-Check that it's not already tagged.
-```
-git ls-remote --tags origin "$MENDERBOT_VERSION"
+```sh
+. ./scripts/version.sh
 ```
 
-If so, bump it in `menderbot/__init__.py` and start over.
+Commit everthing. Do a dry run of the version bump.
 
-Create the prerelease.
+```sh
+./venv/bin/bumpversion --current-version $MENDERBOT_VERSION patch --dry-run --verbose
 ```
+
+Version bump:
+
+```sh
+./venv/bin/bumpversion --current-version $MENDERBOT_VERSION patch
+```
+
+```sh
 gh auth login
-gh release create --prerelease "v${MENDERBOT_VERSION}-pre"
-```
 
-Hit enter a few times, leave a note. Check the workflows for progress. When ready to release for real:
-```
+# For a prerelease:
+gh release create --prerelease "v${MENDERBOT_VERSION}"
+
+# For a real release:
 gh release create "v$MENDERBOT_VERSION"
 ```
+
+Hit enter a few times, leave a note. Check the workflows for progress. 
