@@ -10,6 +10,7 @@ from menderbot.cli_helper import (
     check_llm_consent,
     console,
     generate_doc,
+    render_functions_for_file,
     try_function_type_hints,
 )
 from menderbot.config import create_default_config, has_config, has_llm_consent
@@ -224,4 +225,25 @@ def check():
         "LLM consent not recorded in .menderbot-config.yaml for this repo, please edit it",
     )
     if failed:
+        sys.exit(1)
+
+
+@cli.group()
+def plumbing():
+    """
+    Internal goodies used by other features, such as syntax manipulation
+    """
+
+
+@plumbing.command()
+@click.argument("file")
+def functions(file):
+    """
+    Show some info about functions in a file as json.
+
+    (Do not rely on this format, it will change before 1.0.0)
+    """
+    data = render_functions_for_file(file)
+    console.print_json(data=data)
+    if data.get("error"):
         sys.exit(1)

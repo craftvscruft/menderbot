@@ -4,15 +4,18 @@ Everything cli.py does besides declare commands goes here.
 Eventually this module shouldn't exist, everything should move other places.
 https://www.yanglinzhao.com/posts/utils-antipattern/
 """
+import os
 
 from click import Abort
 from rich.console import Console
 from rich.progress import Progress
 
 from menderbot.check import run_check
+from menderbot.code import LANGUAGE_STRATEGIES
 from menderbot.config import create_default_config, has_config, has_llm_consent
 from menderbot.llm import INSTRUCTIONS, get_response
 from menderbot.prompts import type_prompt
+from menderbot.source_file import SourceFile
 
 console = Console()
 
@@ -102,3 +105,23 @@ def check_llm_consent():
         if not has_config():
             create_default_config()
         raise Abort()
+
+
+def render_functions_for_file(file: str) -> dict:
+    source_file = SourceFile(file)
+    path = source_file.path
+    _, file_extension = os.path.splitext(path)
+    language_strategy = LANGUAGE_STRATEGIES.get(file_extension)
+    if not language_strategy:
+        return {
+            "items": [],
+            "error": f'Unrecognized extension "{file_extension}", skipping.',
+        }
+
+    source = source_file.load_source_as_utf8()
+    tree = language_strategy.parse_source_to_tree(source)
+    functions = [
+        {"name": language_strategy.get_function_node_name(node)}
+        for node in language_strategy.get_function_nodes(tree)
+    ]
+    return {"items": functions}
