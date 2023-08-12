@@ -1,5 +1,5 @@
 # Menderbot
-![Version](https://img.shields.io/badge/version-0.0.3-pre-blue.svg?cacheSeconds=2592000)
+![Version](https://img.shields.io/badge/version-0.0.3-blue.svg?cacheSeconds=2592000)
 ![Tests](https://github.com/craftvscruft/menderbot/actions/workflows/ci.yml/badge.svg?branch=main)
 [![License: APACHE](https://img.shields.io/github/license/craftvscruft/menderbot)](https://github.com/craftvscruft/menderbot/blob/main/LICENSE)
 
