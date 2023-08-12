@@ -166,3 +166,4 @@ cython_debug/
 .idea
 
 vendor/
+.DS_Store

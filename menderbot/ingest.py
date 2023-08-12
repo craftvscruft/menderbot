@@ -42,11 +42,15 @@ def is_path_included(path: str) -> bool:
         ".py",
         ".txt",
         ".yaml",
+        ".yml",
         ".go",
         ".sh",
         ".js",
         ".ts",
         ".tsx",
+        ".dart",
+        ".test",
+        ".bat",
     ]
     _, ext = splitext(path)
     return path not in excluded_paths and ext.lower() in included_extensions

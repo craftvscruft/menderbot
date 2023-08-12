@@ -25,34 +25,46 @@ Menderbot is usable in development of itself - a very small codebase. For instan
 
 * git
 * Python 3.9+
+* Make (you already have it)
 * The environment variable `OPENAI_API_KEY` set to a valid OpenAI API Key.
 
-### Running
+## Running
 Clone the project...
 
-Install an editable version.
+Install an editable version (this uses `pip install -e .`):
 ```
-python -m pip install -e .
+git clone git@github.com:craftvscruft/menderbot.git
+
+make install
 ```
 
 Then run with `menderbot` in any repo.
 
-### Installing from Pip
+### Installing from pip
 
-Not yet supported, install from a local checkout for now. Upvote this [issue](https://github.com/craftvscruft/menderbot/issues/1) if you're interested.
+You can also install directly from pip and avoid cloning the repo: 
+
+```
+pip install menderbot --upgrade
+```
+
+## Running with Docker
+
+If you don't have Python, you can run from [Docker](https://docs.docker.com/get-started/overview/) using the supplied Dockerfile. `make docker` will build the image and print instructions to run it.
+
 
 ## Developing
 
 Clone the project...
 
-```
+```sh
 git clone git@github.com:craftvscruft/menderbot.git
 ```
 
 Then you can initialize your Python environment using [venv](https://docs.python.org/3/library/venv.html).
 
-```
-python -m venv venv
+```sh
+make venv
 
 source venv/bin/activate
 
@@ -61,24 +73,31 @@ pip install "." ".[dev]"
 
 If you want to re-generate the Antlr parsers, see [PARSERS.md](./doc/PARSERS.md), but you probably won't need to.
 
-### Pre-commit
+### Testing
 
-Formatting, linting, tests, and type-checking can all be run through pre-commit, configured in `.pre-commit-config`.
+Formatting, linting, tests, and type-checking can all be run with make, check the `Makefile` for the underlying commands. Run before commiting, or CI will bark :)
 
+```sh
+make check
 ```
-pre-commit run --all-files
-```
-
-Install this as a git hook with `pre-commit install`.
 
 Or you can run individual steps
 
-```
-isort menderbot tests
-black menderbot tests
-pylint --disable=C,R menderbot
-pytest
-mypy
+```sh
+# Run pytest
+make test
+
+# Run pytest with a coverage report
+make coverage
+
+# Run mypy
+make type
+
+# Run pylint
+make lint
+
+# Run black and isort
+make format
 ```
 
 ## Author

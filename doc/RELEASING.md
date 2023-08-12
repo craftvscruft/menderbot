@@ -14,13 +14,13 @@ git ls-remote --tags origin "$MENDERBOT_VERSION"
 
 If so, bump it in `menderbot/__init__.py` and start over.
 
-Tag, starting with "v".
+Create the prerelease.
+```
+gh auth login
+gh release create --prerelease "v${MENDERBOT_VERSION}-pre"
+```
 
+Hit enter a few times, leave a note. Check the workflows for progress. When ready to release for real:
 ```
-git tag "v$MENDERBOT_VERSION"
-```
-
-Push the tag to the remote (origin here), and watch the build on GitHub.
-```
-git push origin "v$MENDERBOT_VERSION"
+gh release create "v$MENDERBOT_VERSION"
 ```

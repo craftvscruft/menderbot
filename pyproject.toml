@@ -24,7 +24,8 @@ dependencies = [
     "llama-index >= 0.7.12",
     "rich-click",
     "gitpython",
-    "antlr4-python3-runtime"
+    "antlr4-python3-runtime",
+    "nltk >= 3.0.0"
 ]
 requires-python = ">=3.9"
 
