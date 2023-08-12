@@ -88,6 +88,10 @@ class LanguageStrategy(ABC):
     def function_doc_line_offset(self) -> int:
         pass
 
+    @abstractmethod
+    def get_function_node_name(self, node) -> str:
+        pass
+
 
 class PythonLanguageStrategy(LanguageStrategy):
     def function_has_comment(self, node: PythonParser.FuncdefContext) -> bool:

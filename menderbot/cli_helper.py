@@ -11,7 +11,7 @@ from rich.console import Console
 from rich.progress import Progress
 
 from menderbot.check import run_check
-from menderbot.code import LANGUAGE_STRATEGIES
+from menderbot.code import LANGUAGE_STRATEGIES, LanguageStrategy
 from menderbot.config import create_default_config, has_config, has_llm_consent
 from menderbot.llm import INSTRUCTIONS, get_response
 from menderbot.prompts import type_prompt
@@ -107,6 +107,13 @@ def check_llm_consent():
         raise Abort()
 
 
+def render_function_node_for_plumbing_json(language_strategy: LanguageStrategy, node):
+    return {
+        "name": language_strategy.get_function_node_name(node),
+        "has_comment": language_strategy.function_has_comment(node),
+    }
+
+
 def render_functions_for_file(file: str) -> dict:
     source_file = SourceFile(file)
     path = source_file.path
@@ -121,7 +128,7 @@ def render_functions_for_file(file: str) -> dict:
     source = source_file.load_source_as_utf8()
     tree = language_strategy.parse_source_to_tree(source)
     functions = [
-        {"name": language_strategy.get_function_node_name(node)}
+        render_function_node_for_plumbing_json(language_strategy, node)
         for node in language_strategy.get_function_nodes(tree)
     ]
     return {"items": functions}
