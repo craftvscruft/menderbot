@@ -241,7 +241,8 @@ def functions(file):
     """
     Show some info about functions in a file as json.
 
-    (Do not rely on this format, it will change before 1.0.0)
+    Uses definitions only for languages that separate declarations.
+    Do not rely on this format, it will change before 1.0.0
     """
     data = render_functions_for_file(file)
     console.print_json(data=data)

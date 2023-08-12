@@ -1,7 +1,7 @@
 import pytest
 
 from menderbot.antlr_generated.PythonParser import PythonParser
-from menderbot.code import PythonLanguageStrategy
+from menderbot.code import CppLanguageStrategy, PythonLanguageStrategy
 from menderbot.typing import get_arg_list_end_line_col
 
 
@@ -40,9 +40,9 @@ def py_strat():
     return PythonLanguageStrategy()
 
 
-# @pytest.fixture
-# def cpp_strat():
-#     return CppLanguageStrategy()
+@pytest.fixture
+def cpp_strat():
+    return CppLanguageStrategy()
 
 
 def test_function_nodes_with_python(sample_python_tree, py_strat):
@@ -124,17 +124,17 @@ def foo():
     assert py_strat.get_function_node_name(node) == "foo"
 
 
-# def test_cpp_function_name(cpp_strat):
-#     source = """
-# #include <stdio.h>
-# int main() {
-#    printf("Hello, World!");
-#    return 0;
-# }
-# """
-#     tree = parse_string_to_tree(source, CPP_LANGUAGE)
-#     node = cpp_strat.get_function_nodes(tree)[0]
-#     assert cpp_strat.get_function_node_name(node) == "main"
+def test_cpp_function_name(cpp_strat):
+    source = """
+#include <stdio.h>
+int main() {
+   printf("Hello, World!");
+   return 0;
+}
+"""
+    tree = parse_string_to_tree(source, cpp_strat)
+    node = cpp_strat.get_function_nodes(tree)[0]
+    assert cpp_strat.get_function_node_name(node) == "main"
 
 
 def test_python_end_of_params_line_col(py_strat):

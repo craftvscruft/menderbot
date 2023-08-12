@@ -4,6 +4,9 @@ from antlr4 import InputStream  # type: ignore
 from antlr4 import CommonTokenStream, ParserRuleContext, ParseTreeWalker
 from antlr4.Token import CommonToken  # type: ignore
 
+from menderbot.antlr_generated.CPP14Lexer import CPP14Lexer
+from menderbot.antlr_generated.CPP14Parser import CPP14Parser
+from menderbot.antlr_generated.CPP14ParserListener import CPP14ParserListener
 from menderbot.antlr_generated.PythonLexer import PythonLexer  # type: ignore
 from menderbot.antlr_generated.PythonParser import PythonParser  # type: ignore
 from menderbot.antlr_generated.PythonParserListener import (  # type: ignore
@@ -72,7 +75,7 @@ class LanguageStrategy(ABC):
         pass
 
     @abstractmethod
-    def parse_source_to_tree(self, source: bytes) -> None:
+    def parse_source_to_tree(self, source: bytes) -> ParserRuleContext:
         pass
 
     @abstractmethod
@@ -177,29 +180,66 @@ class PythonLanguageStrategy(LanguageStrategy):
     function_doc_line_offset = 1
 
 
-# class CppLanguageStrategy(LanguageStrategy):
-#     def function_has_comment(self, node) -> bool:
-#         return node.prev_sibling.type in ["comment"]
-#
-#     def parse_source_to_tree(self, source: bytes):
-#         return parse_source_to_tree(source, CPP_LANGUAGE)
-#
-#     def get_function_nodes(self, tree) -> list:
-#         query = CPP_LANGUAGE.query(
-#             """
-#         [
-#             (function_definition) @function
-#         ]
-#         """
-#         )
-#         captures = query.captures(tree.root_node)
-#         return [capture[0] for capture in captures]
-#
-#     function_doc_line_offset = 0
+class CppLanguageStrategy(LanguageStrategy):
+    # Can't go past C++14?
+    # https://github.com/antlr/grammars-v4/issues/2475
+    def function_has_comment(self, node) -> bool:
+        return False
 
+    def parse_source_to_tree(self, source: bytes) -> CPP14Parser.TranslationUnitContext:
+        print("Init parser")
+        input_stream = InputStream(str(source, encoding="utf-8") + "\n")
+        lexer = CPP14Lexer(input_stream)
+        token_stream = CommonTokenStream(lexer)
+        parser = CPP14Parser(token_stream)
+        print("Parser starting")
+        unit = parser.translationUnit()
+        print("Parser done")
+        return unit
+
+    def get_function_nodes(self, tree) -> list:
+        function_nodes: list[CPP14Parser.FunctionDefinitionContext] = []
+
+        class MyListener(CPP14ParserListener):
+            def enterFunctionDefinition(
+                self, ctx: CPP14Parser.FunctionDefinitionContext
+            ):
+                function_nodes.append(ctx)
+
+        walker = ParseTreeWalker()
+        walker.walk(MyListener(), tree)
+        return function_nodes
+
+    def get_imports(self, tree) -> list:
+        del tree
+        print("get_imports not yet supported on CPP")
+        return []
+
+    @property
+    def function_doc_line_offset(self) -> int:
+        return 0
+
+    def get_function_node_name(
+        self, node: CPP14Parser.FunctionDefinitionContext
+    ) -> str:
+        node_name = None
+
+        class DeclaratorIdFindingListener(CPP14ParserListener):
+            def enterDeclaratorid(self, ctx: CPP14Parser.DeclaratoridContext):
+                nonlocal node_name
+                if not node_name:
+                    node_name = node_str(ctx.idExpression())
+
+        walker = ParseTreeWalker()
+        walker.walk(DeclaratorIdFindingListener(), node.declarator())
+        return node_name or "<NAME_NOT_FOUND>"
+
+
+_cpp_language_strategy = CppLanguageStrategy()
 
 LANGUAGE_STRATEGIES = {
     ".py": PythonLanguageStrategy(),
-    # ".c": CppLanguageStrategy(),
-    # ".cpp": CppLanguageStrategy(),
+    ".c": _cpp_language_strategy,
+    ".cpp": _cpp_language_strategy,
+    ".cc": _cpp_language_strategy,
 }
