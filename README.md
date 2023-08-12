@@ -2,6 +2,7 @@
 ![Version](https://img.shields.io/badge/version-0.0.4-blue.svg?cacheSeconds=2592000)
 ![Tests](https://github.com/craftvscruft/menderbot/actions/workflows/ci.yml/badge.svg?branch=main)
 [![License: APACHE](https://img.shields.io/github/license/craftvscruft/menderbot)](https://github.com/craftvscruft/menderbot/blob/main/LICENSE)
+[![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/craftvscruft/menderbot/badges/quality-score.png?b=main)](https://scrutinizer-ci.com/g/craftvscruft/menderbot/?branch=main)
 
 > The AI-powered command line tool for working with legacy code. [Designed](./doc/DESIGN.md) based on the principles of the [Mechanized Mending Manifesto](https://mender.ai/docs/intro).
 
