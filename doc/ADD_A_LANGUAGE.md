@@ -26,3 +26,7 @@ If successful, it will create new parser code in `menderbot/antlr_generated` wit
 Start in `menderbot/code.py`. This pattern is rapidly changing, more coming here when it settles down. 
 
 Please [reach out](https://github.com/craftvscruft/menderbot/issues/5) if you are interested in adding a target language.
+
+## Test the plumbing
+
+Add an example to `scripts/smoke.sh` and run it.

@@ -99,8 +99,7 @@ class PythonLanguageStrategy(LanguageStrategy):
         body_node: PythonParser.SuiteContext = node.suite()
         if body_node:
             # https://peps.python.org/pep-0257/
-            first_stmt_node: PythonParser.StmtContext = body_node.stmt(0)
-            first_stmt_text = first_stmt_node.getText().strip()
+            first_stmt_text = self._body_first_statement_text(body_node)
             has_doc_prefix = (
                 first_stmt_text.startswith('"""')
                 or first_stmt_text.startswith('r"""')
@@ -110,6 +109,13 @@ class PythonLanguageStrategy(LanguageStrategy):
             has_doc_suffix = first_stmt_text.endswith('"""')
             return has_doc_prefix and has_doc_suffix
         return False
+
+    def _body_first_statement_text(self, body_node):
+        simple_stmt_node: PythonParser.Simple_stmtContext = body_node.simple_stmt()
+        first_stmt_node: PythonParser.StmtContext = body_node.stmt(0)
+        if simple_stmt_node:
+            return node_str(simple_stmt_node).strip()
+        return node_str(first_stmt_node).strip()
 
     def parse_source_to_tree(self, source: bytes):
         input_stream = InputStream(str(source, encoding="utf-8") + "\n")
