@@ -1,9 +1,9 @@
-name: Python package
+name: Test
 
 on: [push]
 
 jobs:
-  build:
+  build_and_test:
 
     runs-on: ubuntu-latest
     strategy:
@@ -35,5 +35,3 @@ jobs:
         run: |
           python -m build
           find ./dist/*.whl | xargs pip install
-      # Next consider storing an artifact
-      # https://docs.github.com/en/actions/using-workflows/storing-workflow-data-as-artifacts
