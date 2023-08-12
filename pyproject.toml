@@ -6,9 +6,14 @@ readme = "README.md"
 authors = [{ name = "Ray Myers" }]
 license = { file = "LICENSE" }
 classifiers = [
-    "License :: OSI Approved :: Apache License",
+    "License :: OSI Approved :: Apache Software License",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3",
+    "Development Status :: 3 - Alpha",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Software Development :: Quality Assurance",
+    "Topic :: Software Development :: Documentation",
+    "Topic :: Software Development :: Code Generators"
 ]
 keywords = ["ai", "gpt", "refactoring", "legacy", "code"]
 dependencies = [

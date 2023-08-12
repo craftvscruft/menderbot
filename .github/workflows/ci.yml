@@ -32,8 +32,7 @@ jobs:
           python -m pytest --cov --cov-fail-under=50
       - name: type-checking
         run: |
-          python -m mypy --install-types
-          python -m mypy menderbot
+          python -m mypy menderbot --install-types
       - name: build whl
         run: |
           python -m build
