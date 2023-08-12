@@ -306,11 +306,12 @@ def check():
         f"OpenAI API key found in {key_env_var()}",
         f"OpenAI API key not found in {key_env_var()}",
     )
-
+    if not has_config():
+        create_default_config("No .menderbot-config.yaml file found, creating...")
     check_condition(
         has_llm_consent(),
         "LLM consent configured for this repo",
-        "LLM consent not recorded in .menderbot-config.yaml for this repo",
+        "LLM consent not recorded in .menderbot-config.yaml for this repo, please edit it",
     )
     if failed:
         sys.exit(1)

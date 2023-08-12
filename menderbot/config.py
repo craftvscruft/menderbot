@@ -35,7 +35,7 @@ def has_config():
     return config_path and exists(get_config_path())
 
 
-def create_default_config():
+def create_default_config(message="Writing default config"):
     config_path = get_config_path()
     if exists(config_path):
         # Should not have been called when file exists
@@ -44,7 +44,7 @@ def create_default_config():
         print("Cannot resolve config path. Not in git repo?")
         return
     with open(config_path, "w", encoding="utf-8") as conf_file:
-        print("Writing default config ")
+        print(message)
         conf_file.write(DEFAULT_CONFIG_YAML)
 
 

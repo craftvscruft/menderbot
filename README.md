@@ -28,17 +28,13 @@ Menderbot is usable in development of itself - a very small codebase. For instan
 * Make (you already have it)
 * The environment variable `OPENAI_API_KEY` set to a valid OpenAI API Key.
 
-## Running
-Clone the project...
-
-Install an editable version (this uses `pip install -e .`):
+## Installing from source
+Clone the project and install an editable version (this uses `pip install -e .`):
 ```
 git clone git@github.com:craftvscruft/menderbot.git
 
 make install
 ```
-
-Then run with `menderbot` in any repo.
 
 ### Installing from pip
 
@@ -48,7 +44,14 @@ You can also install directly from pip and avoid cloning the repo:
 pip install menderbot --upgrade
 ```
 
-### Running with Docker
+## Running
+You can run with `menderbot` in any repo. It's a good idea to start by running the `check` command to make sure we have what we need. For instance we will need to supply the OPENAI_API_KEY environment variable and a ``.menderbot-config.yaml` file indicating consent.
+
+```
+menderbot check
+```
+
+### Running with Docker (advanced)
 
 If you don't have Python, you can run from [Docker](https://docs.docker.com/get-started/overview/) using the supplied Dockerfile. Run `make docker` to build the image and print instructions on how to run it.
 
@@ -78,10 +81,11 @@ If you want to re-generate the Antlr parsers, see [PARSERS.md](./doc/PARSERS.md)
 Formatting, linting, tests, and type-checking can all be run with make, check the `Makefile` for the underlying commands. Run before commiting, or CI will bark :)
 
 ```sh
+# Same as `make test type lint format`
 make check
 ```
 
-Or you can run individual steps
+Or you can run individual steps if you prefer:
 
 ```sh
 # Run pytest
