@@ -21,6 +21,10 @@ clean:
 test: venv
 	./$(VENV)/bin/python3 -m pytest tests
 
+integration: venv
+	./$(VENV)/bin/python3 -m pytest --integration tests
+
+
 coverage: venv
 	./$(VENV)/bin/python3 -m pytest tests --cov --cov-fail-under=50 --cov-report html
 	-open "htmlcov/index.html"
@@ -47,4 +51,4 @@ docker:
 	@echo "Maybe you'd like to alias it?"
 	@echo "  alias menderbot-docker='docker run -e OPENAI_API_KEY -it -v "\$$PWD:/target" menderbot:latest'"
 
-.PHONY: all venv check install clean test type lint format coverage docker clean-docker
+.PHONY: all venv check install clean test type lint format coverage docker integration clean-docker

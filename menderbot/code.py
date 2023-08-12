@@ -15,6 +15,26 @@ def node_str(node) -> str:
     return get_text_including_whitespace(node)
 
 
+def node_start_line(node: ParserRuleContext) -> int:
+    node_start: CommonToken = node.start
+    return node_start.line
+
+
+def node_stop_line(node: ParserRuleContext) -> int:
+    node_stop: CommonToken = node.stop
+    return node_stop.line
+
+
+def node_start_column(node: ParserRuleContext) -> int:
+    node_start: CommonToken = node.start
+    return node_start.column
+
+
+def node_stop_column(node: ParserRuleContext) -> int:
+    node_start: CommonToken = node.stop
+    return node_start.column
+
+
 def get_text_including_whitespace(ctx: ParserRuleContext):
     start: CommonToken = ctx.start
     stop: CommonToken = ctx.stop
@@ -71,11 +91,7 @@ class LanguageStrategy(ABC):
 
 class PythonLanguageStrategy(LanguageStrategy):
     def function_has_comment(self, node: PythonParser.FuncdefContext) -> bool:
-        """Checks if function has a docstring. Example node:
-        (function_definition name: (identifier) parameters: (parameters)
-           body: (block (expression_statement
-             (string string_content: (string_content))) (pass_statement)))
-        """
+        """Checks if function has a docstring."""
         body_node: PythonParser.SuiteContext = node.suite()
         if body_node:
             # https://peps.python.org/pep-0257/

@@ -36,6 +36,8 @@ dev = [
     "isort", 
     "pip-tools", 
     "pytest",
+    "approvaltests",
+    "pytest-approvaltests",
     "pylint",
     "mypy",
     "markdown-code-runner",
@@ -54,7 +56,7 @@ build-backend = "setuptools.build_meta"
 menderbot = "menderbot:cli"
 
 [tool.setuptools]
-packages = ["menderbot"]
+packages = ["menderbot", "menderbot.antlr_generated"]
 
 platforms = [
     'Linux',

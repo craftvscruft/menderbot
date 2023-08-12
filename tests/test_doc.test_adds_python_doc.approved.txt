@@ -1,0 +1,4 @@
+
+def foo():
+    """Hi!"""
+    print('Hello World')

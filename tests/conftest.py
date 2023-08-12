@@ -39,3 +39,26 @@ def mock_get_text_embedding(text: str) -> list[float]:
 def mock_get_text_embeddings(texts: list[str]) -> list[list[float]]:
     """Mock get text embeddings."""
     return [mock_get_text_embedding(text) for text in texts]
+
+
+def pytest_addoption(parser):
+    parser.addoption(
+        "--integration",
+        action="store_true",
+        default=False,
+        help="run integration tests that call OpenAI",
+    )
+
+
+def pytest_configure(config):
+    config.addinivalue_line("markers", "integration: mark test as skipped by default")
+
+
+def pytest_collection_modifyitems(config, items):
+    if config.getoption("--integration"):
+        # --runslow given in cli: do not skip slow tests
+        return
+    skip_integration = pytest.mark.skip(reason="need --integration option to run")
+    for item in items:
+        if "integration" in item.keywords:
+            item.add_marker(skip_integration)

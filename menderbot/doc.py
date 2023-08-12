@@ -2,13 +2,16 @@ import logging
 import os
 from typing import Callable
 
-from menderbot.code import LANGUAGE_STRATEGIES
+from menderbot.code import LANGUAGE_STRATEGIES, node_start_line, node_str
 from menderbot.source_file import Insertion, SourceFile
 
 logger = logging.getLogger("doc")
 
 
 def init_logging() -> None:
+    """
+    Initializes the logging module.
+    """
     logger.setLevel(logging.DEBUG)
     # create console handler with a higher log level
     stream_handler = logging.StreamHandler()
@@ -20,6 +23,14 @@ init_logging()
 
 
 def document_file(source_file: SourceFile, doc_gen: Callable) -> list[Insertion]:
+    """
+    Generates documentation for functions in the sourcefile that don't have it
+    using the supplied `doc_gen` callable.
+
+    Return a list of insertions which the caller can use to update the file.
+
+    If the file extension has no language strategy, the function logs a message and returns an empty list.
+    """
     path = source_file.path
     logger.info('Processing "%s"...', path)
     _, file_extension = os.path.splitext(path)
@@ -35,9 +46,9 @@ def document_file(source_file: SourceFile, doc_gen: Callable) -> list[Insertion]
         if not language_strategy.function_has_comment(node):
             name = language_strategy.get_function_node_name(node)
             logger.info('Found undocumented function "%s"', name)
-            code = str(node.text, encoding="utf-8")
+            code = node_str(node)
             comment = doc_gen(code, file_extension)
-            function_start_line = node.start_point[0] + 1
+            function_start_line = node_start_line(node)
             doc_start_line = (
                 function_start_line + language_strategy.function_doc_line_offset
             )
