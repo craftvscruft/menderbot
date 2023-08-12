@@ -1,0 +1,4 @@
+filter:
+    excluded_paths:
+        - "menderbot/antlr_generated"
+        - "vendor/"
