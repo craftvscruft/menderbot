@@ -8,9 +8,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        # Once we support multiple versions, we have to gitignore the Pipfile.lock.
-        # python-version: ["3.9", "3.10", "3.11"]
-        python-version: ["3.9"]
+        python-version: ["3.9", "3.10", "3.11"]
 
     steps:
       - uses: actions/checkout@v3
@@ -32,7 +30,7 @@ jobs:
           python -m pytest --cov --cov-fail-under=50
       - name: type-checking
         run: |
-          python -m mypy menderbot --install-types
+          python -m mypy menderbot
       - name: build whl
         run: |
           python -m build

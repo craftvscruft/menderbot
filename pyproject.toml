@@ -38,7 +38,8 @@ dev = [
     "pylint",
     "mypy",
     "pre-commit",
-    "pytest-cov"
+    "pytest-cov",
+    "types-PyYAML"
 ]
 
 [project.urls]
