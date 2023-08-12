@@ -48,9 +48,9 @@ You can also install directly from pip and avoid cloning the repo:
 pip install menderbot --upgrade
 ```
 
-## Running with Docker
+### Running with Docker
 
-If you don't have Python, you can run from [Docker](https://docs.docker.com/get-started/overview/) using the supplied Dockerfile. `make docker` will build the image and print instructions to run it.
+If you don't have Python, you can run from [Docker](https://docs.docker.com/get-started/overview/) using the supplied Dockerfile. Run `make docker` to build the image and print instructions on how to run it.
 
 
 ## Developing
