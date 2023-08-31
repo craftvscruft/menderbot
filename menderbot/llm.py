@@ -18,7 +18,7 @@ MAX_CONTEXT_QUESTIONS = 10
 __key_env_var = "OPENAI_API_KEY"
 
 
-def key_env_var() -> str:
+def key_env_var():
     return __key_env_var
 
 
@@ -40,18 +40,18 @@ def init_openai():
 init_openai()
 
 
-def is_test_override() -> bool:
+def is_test_override():
     return (
         os.getenv(key_env_var())
         == "sk-TEST00000000000000000000000000000000000000000000"
     )
 
 
-def has_key() -> bool:
+def has_key():
     return os.getenv(key_env_var(), "") != ""
 
 
-def override_response_for_test(messages) -> str:
+def override_response_for_test(messages):
     del messages
     return "<LLM Output>"
 
@@ -61,8 +61,8 @@ def is_debug():
 
 
 def get_response(
-    instructions: str, previous_questions_and_answers: list, new_question: str
-) -> str:
+    instructions, previous_questions_and_answers, new_question
+):
     """Get a response from ChatCompletion
 
     Args:
