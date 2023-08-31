@@ -36,6 +36,8 @@ def node_stop_column(node: ParserRuleContext) -> int:
 
 
 def get_text_including_whitespace(ctx: ParserRuleContext):
+    if not ctx:
+        return ""
     start: CommonToken = ctx.start
     stop: CommonToken = ctx.stop
     start_idx: int = start.start

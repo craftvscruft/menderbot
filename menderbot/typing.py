@@ -28,6 +28,7 @@ def parse_type_hint_answer(text: str) -> list:
 def add_type_hints(
     tree, function_node: PythonParser.FuncdefContext, hints: list
 ) -> list:
+    print("function_node", function_node)
     function_name_ctx: PythonParser.NameContext = function_node.name()
     function_name = node_str(function_name_ctx)
     def_param_nodes = get_function_param_nodes(function_node)
@@ -75,7 +76,8 @@ def add_type_hints(
                         label=function_name,
                     )
                 )
-        if ident == "return" and not return_type_node:
+        # TODO: What does it mean when function_node.typedargslist() is not there?
+        if ident == "return" and not return_type_node and function_node.typedargslist():
             line, col = get_arg_list_end_line_col(function_node)
             insertions.append(
                 Insertion(
@@ -148,11 +150,12 @@ def get_function_param_nodes(
     # args_node : Optional[PythonParser.ArgsContext] = params_node.args()
     # def_params_node: Optional[PythonParser.Def_parametersContext] = params_node.def_parameters()
     # kwargs_node: Optional[PythonParser.KwargsContext] = params_node.kwargs()
-    def_params_nodes: list[
-        PythonParser.Def_parameterContext
-    ] = args_list_node.def_parameters()
-    for def_params_node_untyped in def_params_nodes:
-        def_params_node: PythonParser.Def_parametersContext = def_params_node_untyped
-        for def_param_node_untyped in def_params_node.def_parameter():
-            def_param_node: PythonParser.Def_parameterContext = def_param_node_untyped
-            yield def_param_node
+    if args_list_node:
+        def_params_nodes: list[
+            PythonParser.Def_parameterContext
+        ] = args_list_node.def_parameters()
+        for def_params_node_untyped in def_params_nodes:
+            def_params_node: PythonParser.Def_parametersContext = def_params_node_untyped
+            for def_param_node_untyped in def_params_node.def_parameter():
+                def_param_node: PythonParser.Def_parameterContext = def_param_node_untyped
+                yield def_param_node
