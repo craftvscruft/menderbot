@@ -26,7 +26,8 @@ def partition(pred, iterable):
 
 
 def insert_in_lines(lines: Iterable[str], insertions: Iterable[Insertion]):
-    print("INSERTION", insertions)
+    # TODO: verbose flag
+    # print("INSERTION", insertions)
     lines = iter(lines)
     last_line = 1
     insertion_groups = itertools.groupby(insertions, key=lambda ins: ins.line_number)
@@ -45,7 +46,8 @@ def insert_in_lines(lines: Iterable[str], insertions: Iterable[Insertion]):
         for insertion in inline_insertions:
             if not line_to_edit:
                 line_to_edit = next(lines, "")
-            col = insertion.col + col_offset
+            # insertion.col is 1-indexed, col is zero indexed
+            col = insertion.col + col_offset - 1
             col_offset += len(insertion.text)
             line_to_edit = line_to_edit[:col] + insertion.text + line_to_edit[col:]
         if line_to_edit:

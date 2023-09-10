@@ -25,7 +25,9 @@ dependencies = [
     "rich-click",
     "gitpython",
     "antlr4-python3-runtime",
-    "nltk >= 3.0.0"
+    "nltk >= 3.0.0",
+    "libcst >= 1.0.1",
+    "tenacity >= 8.2.2"
 ]
 requires-python = ">=3.9"
 

@@ -85,10 +85,10 @@ def chat():
 
 
 def try_function_type_hints(
-    mypy_cmd, source_file, tree, function_node, function_text, needs_typing
+    mypy_cmd, source_file, function_ast, needs_typing
 ):
     from menderbot.typing import add_type_hints, parse_type_hint_answer  # Lazy import
-
+    function_text = function_ast.text
     check_command = (
         f"{mypy_cmd} --shadow-file {source_file.path} {source_file.path}.shadow"
     )
@@ -96,7 +96,9 @@ def try_function_type_hints(
     check_output = None
     # First set them all to wrong type, to produce an error message.
     hints = [(ident, "None") for ident in needs_typing]
-    insertions_for_function = add_type_hints(tree, function_node, hints)
+    # TODO
+    imports = []
+    insertions_for_function = add_type_hints(function_ast, hints, imports)
     if insertions_for_function:
         source_file.update_file(insertions_for_function, suffix=".shadow")
         console.print("> ", check_command)
@@ -110,7 +112,7 @@ def try_function_type_hints(
         answer = get_response_with_progress(INSTRUCTIONS, [], prompt)
         hints = parse_type_hint_answer(answer)
 
-        insertions_for_function = add_type_hints(tree, function_node, hints)
+        insertions_for_function = add_type_hints(function_ast, hints, imports)
         if insertions_for_function:
             console.print(f"[cyan]Bot[/cyan]: {hints}")
             source_file.update_file(insertions_for_function, suffix=".shadow")
@@ -144,11 +146,11 @@ def type_command(file):
         return
     source_file = SourceFile(file)
     insertions = []
-    for tree, function_node, function_text, needs_typing in process_untyped_functions(
+    for function_ast, needs_typing in process_untyped_functions(
         source_file
     ):
         insertions += try_function_type_hints(
-            mypy_cmd, source_file, tree, function_node, function_text, needs_typing
+            mypy_cmd, source_file, function_ast, needs_typing
         )
     if not insertions:
         console.print(f"No changes for '{file}.")

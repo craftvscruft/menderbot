@@ -2,7 +2,7 @@ import pytest
 
 from menderbot.antlr_generated.PythonParser import PythonParser
 from menderbot.code import PythonLanguageStrategy
-from menderbot.typing import get_arg_list_end_line_col
+from menderbot import python_cst
 
 
 def parse_string_to_tree(str, lang_strat):
@@ -139,10 +139,12 @@ def foo():
 
 def test_python_end_of_params_line_col(py_strat):
     # TODO: Should move into LanguageStrategy probably.
-    source = """
+    code = """
+#2345678901234
 def foo(a, b):
     pass
 """
-    tree = parse_string_to_tree(source, py_strat)
-    node = py_strat.get_function_nodes(tree)[0]
-    assert get_arg_list_end_line_col(node) == (2, 13)
+    fn_ast = python_cst.collect_function_asts(code)[0]
+    sig_ast = fn_ast.children_filtered(kind=python_cst.KIND_SIGNATURE)[0]
+    sig_end = sig_ast.src_range.end
+    assert (sig_end.line, sig_end.col) == (3, 14)

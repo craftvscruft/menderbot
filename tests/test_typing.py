@@ -4,14 +4,14 @@ from unittest.mock import patch
 import pytest
 
 from menderbot.__main__ import try_function_type_hints
-from menderbot.code import LanguageStrategy, PythonLanguageStrategy
+from menderbot.code import LanguageStrategy, PythonLanguageStrategy, node_str
 from menderbot.source_file import Insertion, SourceFile, insert_in_lines
 from menderbot.typing import (
     add_type_hints,
-    node_str,
     parse_type_hint_answer,
-    process_untyped_functions_in_tree,
+    what_needs_typing,
 )
+from menderbot import python_cst
 
 
 @pytest.fixture
@@ -31,36 +31,36 @@ def foo(a):
 """
     code_lines = code.splitlines(True)
     expected_lines = ["\n", "def foo(a: int) -> None:\n", "    pass\n"]
-    tree = parse_string_to_tree(
-        code,
-        py_strat,
-    )
     expected = [
-        Insertion(text=": int", line_number=2, col=9, inline=True, label="foo"),
-        Insertion(text=" -> None", line_number=2, col=10, inline=True, label="foo"),
+        Insertion(text=": int", line_number=2, col=10, inline=True, label="foo"),
+        Insertion(text=" -> None", line_number=2, col=11, inline=True, label="foo"),
     ]
-    function_nodes = py_strat.get_function_nodes(tree)
+    fn_asts = python_cst.collect_function_asts(code)
     hints = [("a", "int"), ("return", "None")]
-    insertions = add_type_hints(tree, function_nodes[0], hints)
+    insertions = add_type_hints(fn_asts[0], hints, [])
+
+    sig_ast = fn_asts[0].children_filtered(kind=python_cst.KIND_SIGNATURE)[0]
+    # print(code)
+    # print(sig_ast.text)
+    # print(sig_ast.src_range)
+    # print(python_cst.to_json(fn_asts))
+    assert sig_ast.src_range.end.col == 11
 
     assert insertions == expected
     assert list(insert_in_lines(code_lines, insertions)) == expected_lines
 
 
 def test_add_type_hints_on_first_line(py_strat):
-    tree = parse_string_to_tree(
-        """def foo(a):
+    code = """def foo(a):
     pass
-""",
-        py_strat,
-    )
+"""
     expected = [
-        Insertion(text=": int", line_number=1, col=9, inline=True, label="foo"),
-        Insertion(text=" -> None", line_number=1, col=10, inline=True, label="foo"),
+        Insertion(text=": int", line_number=1, col=10, inline=True, label="foo"),
+        Insertion(text=" -> None", line_number=1, col=11, inline=True, label="foo"),
     ]
-    function_nodes = py_strat.get_function_nodes(tree)
+    fn_asts = python_cst.collect_function_asts(code)
     hints = [("a", "int"), ("return", "None")]
-    insertions = add_type_hints(tree, function_nodes[0], hints)
+    insertions = add_type_hints(fn_asts[0], hints, [])
 
     assert insertions == expected
 
@@ -70,26 +70,18 @@ def test_parse_type_hint_answer():
 
 
 def test_process_untyped_functions_one_result(py_strat):
-    tree = parse_string_to_tree(
-        """def foo(a):
-    pass""",
-        py_strat,
-    )
-    results = list(process_untyped_functions_in_tree(tree, py_strat))
-    assert len(results) == 1
-    (_, _, _, needs_typing) = results[0]
+    code = """def foo(a):
+    pass"""
+    fn_asts = python_cst.collect_function_asts(code)
+    needs_typing = what_needs_typing(fn_asts[0])
     assert needs_typing == ["a", "return"]
 
 
 def test_process_untyped_functions_excludes_init(py_strat):
-    tree = parse_string_to_tree(
-        """def __init__(a):
-    pass""",
-        py_strat,
-    )
-    results = list(process_untyped_functions_in_tree(tree, py_strat))
-    assert len(results) == 1
-    (_, _, _, needs_typing) = results[0]
+    code = """def __init__(a):
+    pass"""
+    fn_asts = python_cst.collect_function_asts(code)
+    needs_typing = what_needs_typing(fn_asts[0])
     assert needs_typing == ["a"]
 
 
@@ -109,27 +101,18 @@ def test_try_function_type_hints(py_strat):
 def foo(a):
     pass
     """
-    tree = parse_string_to_tree(
-        code,
-        py_strat,
-    )
-    expected = [
-        Insertion(text=": int", line_number=2, col=9, inline=True, label="foo"),
-        Insertion(text=" -> None", line_number=2, col=10, inline=True, label="foo"),
-    ]
+    fn_asts = python_cst.collect_function_asts(code)
     with patch(
         "menderbot.check.run_check",
         side_effect=lambda _: True,
     ):
         source_file = MockSourceFile()
-        function_node = py_strat.get_function_nodes(tree)[0]
-        function_text = node_str(function_node)
         no_hints = try_function_type_hints(
-            "..mypy..", source_file, tree, function_node, function_text, []
+            "..mypy..", source_file, fn_asts[0], []
         )
         assert no_hints == []
         one_hint_no_results = try_function_type_hints(
-            "..mypy..", source_file, tree, function_node, function_text, ["a"]
+            "..mypy..", source_file, fn_asts[0], ["a"]
         )
         assert one_hint_no_results == []
 

@@ -1,7 +1,11 @@
 import os
 
 import openai
-
+from tenacity import (
+    retry,
+    stop_after_attempt,
+    wait_random_exponential,
+)
 from menderbot.config import has_llm_consent, load_config
 
 INSTRUCTIONS = (
@@ -60,6 +64,7 @@ def is_debug():
     return os.getenv("DEBUG_LLM", "0") == "1"
 
 
+@retry(wait=wait_random_exponential(min=3, max=90), stop=stop_after_attempt(3))
 def get_response(
     instructions, previous_questions_and_answers, new_question
 ):

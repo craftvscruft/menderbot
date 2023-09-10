@@ -1,15 +1,24 @@
 import logging
 import os
 import re
-from typing import Generator
-
-from antlr4.Token import CommonToken  # type: ignore
-
-from menderbot.antlr_generated.PythonParser import PythonParser  # type: ignore
-from menderbot.code import PythonLanguageStrategy, node_str
+from menderbot import python_cst
 from menderbot.source_file import Insertion, SourceFile
 
 logger = logging.getLogger("typing")
+
+
+def process_untyped_functions(source_file: SourceFile):
+    path = source_file.path
+    logger.info('Processing "%s"...', path)
+    _, file_extension = os.path.splitext(path)
+    if not file_extension == ".py":
+        logger.info('"%s" is not a Python file, skipping.', path)
+        return
+    source = source_file.load_source_as_utf8()
+
+    for fn_ast in python_cst.collect_function_asts(source):
+        yield (fn_ast, what_needs_typing(fn_ast))
+
 
 
 def parse_type_hint_answer(text: str) -> list:
@@ -26,19 +35,17 @@ def parse_type_hint_answer(text: str) -> list:
 
 
 def add_type_hints(
-    tree, function_node: PythonParser.FuncdefContext, hints: list
+    function_ast: python_cst.AstNode, hints: list[tuple[str, str]], imports: list[tuple[str, str]]
 ) -> list:
-    print("function_node", function_node)
-    function_name_ctx: PythonParser.NameContext = function_node.name()
-    function_name = node_str(function_name_ctx)
-    def_param_nodes = get_function_param_nodes(function_node)
-    return_type_node = function_node.test()
+    print("function_node", function_ast.props)
+    function_name = function_ast.props['name']
+    sig_ast = function_ast.children_filtered(kind=python_cst.KIND_SIGNATURE)[0]
+    def_param_nodes = sig_ast.children_filtered(kind=python_cst.KIND_PARAM)
+    return_type = function_ast.props.get(python_cst.PROP_RETURN_TYPE)
     insertions = []
-    py_strat = PythonLanguageStrategy()
-    imports = py_strat.get_imports(tree)
     common_typing_import_names = ["Optional", "Callable", "NamedTuple", "Any", "Type"]
 
-    def add_needed_imports(new_type):
+    def add_needed_imports(new_type: str):
         new_type_symbols = re.findall(r"\b\w+\b", new_type)
         for new_type_symbol in new_type_symbols:
             if (
@@ -56,34 +63,24 @@ def add_type_hints(
 
     for ident, new_type in hints:
         add_needed_imports(new_type)
-        for param_node_untyped in def_param_nodes:
-            param_node: PythonParser.Def_parameterContext = param_node_untyped
-            named_param_node: PythonParser.Named_parameterContext = (
-                param_node.named_parameter()
-            )
-
-            if named_param_node.name() and node_str(named_param_node.name()) == ident:
-                param_name_start: CommonToken = named_param_node.name().start
-                line = param_name_start.line
-                col = param_name_start.column + 1
-
+        for param_node in def_param_nodes:
+            if param_node.props.get('name') == ident:
                 insertions.append(
                     Insertion(
                         text=f": {new_type}",
-                        line_number=line,
-                        col=col,
+                        line_number=param_node.src_range.end.line,
+                        col=param_node.src_range.end.col,
                         inline=True,
                         label=function_name,
                     )
                 )
-        # TODO: What does it mean when function_node.typedargslist() is not there?
-        if ident == "return" and not return_type_node and function_node.typedargslist():
-            line, col = get_arg_list_end_line_col(function_node)
+        if ident == "return" and not return_type:
+            signature_ast = function_ast.children_filtered(kind=python_cst.KIND_SIGNATURE)[0]
             insertions.append(
                 Insertion(
                     text=f" -> {new_type}",
-                    line_number=line,
-                    col=col,
+                    line_number=signature_ast.src_range.end.line,
+                    col=signature_ast.src_range.end.col,
                     inline=True,
                     label=function_name,
                 )
@@ -92,70 +89,37 @@ def add_type_hints(
     return insertions
 
 
-def get_arg_list_end_line_col(function_node):
-    arg_list_node = function_node.typedargslist()
-    arg_list_stop: CommonToken = arg_list_node.stop
-    line = arg_list_stop.line
-    col = arg_list_stop.column + 2
-    return line, col
 
 
-def process_untyped_functions(source_file: SourceFile):
-    path = source_file.path
-    logger.info('Processing "%s"...', path)
-    _, file_extension = os.path.splitext(path)
-    if not file_extension == ".py":
-        logger.info('"%s" is not a Python file, skipping.', path)
-        return
-    language_strategy = PythonLanguageStrategy()
-    source = source_file.load_source_as_utf8()
-    tree = language_strategy.parse_source_to_tree(source)
-    return process_untyped_functions_in_tree(tree, language_strategy)
+def what_needs_typing(fn_ast: python_cst.AstNode) -> list[str]:
+    name = fn_ast.props['name']
+    sig_ast = fn_ast.children_filtered(kind=python_cst.KIND_SIGNATURE)[0]
+    param_asts = sig_ast.children_filtered(kind=python_cst.KIND_PARAM)
+    return_type = fn_ast.props.get(python_cst.PROP_RETURN_TYPE)
+    needs_typing = [
+        param_ast.props["name"]
+        for param_ast in param_asts
+        if "type" not in param_ast.props and
+           param_ast.props["name"] not in ["self", "cls"]
+    ]
+    if not return_type and name != "__init__":
+        needs_typing.append("return")
+    return needs_typing
 
 
-def process_untyped_functions_in_tree(tree, language_strategy):
-    for node in language_strategy.get_function_nodes(tree):
-        name = node_str(node.name())
-        def_param_nodes = get_function_param_nodes(node)
-        args_list_node = node.typedargslist()
-        return_type_node = node.test()
-        needs_typing_unfiltered = [
-            node_str(n.named_parameter()) for n in def_param_nodes
-        ]
-        needs_typing = [
-            ns
-            for ns in needs_typing_unfiltered
-            if ":" not in ns and ns not in ["self", "cls"]
-        ]
-
-        return_type_text = ""
-        if return_type_node:
-            return_type_text = " -> " + node_str(return_type_node)
-        elif name != "__init__":
-            needs_typing.append("return")
-        params_text = node_str(args_list_node)
-        print()
-        print(f"def {name}({params_text}){return_type_text}")
-
-        if needs_typing:
-            function_text = node_str(node)
-            # Should make an object
-            yield (tree, node, function_text, needs_typing)
-
-
-def get_function_param_nodes(
-    node: PythonParser.FuncdefContext,
-) -> Generator[PythonParser.Def_parameterContext, None, None]:
-    args_list_node: PythonParser.TypedargslistContext = node.typedargslist()
-    # args_node : Optional[PythonParser.ArgsContext] = params_node.args()
-    # def_params_node: Optional[PythonParser.Def_parametersContext] = params_node.def_parameters()
-    # kwargs_node: Optional[PythonParser.KwargsContext] = params_node.kwargs()
-    if args_list_node:
-        def_params_nodes: list[
-            PythonParser.Def_parameterContext
-        ] = args_list_node.def_parameters()
-        for def_params_node_untyped in def_params_nodes:
-            def_params_node: PythonParser.Def_parametersContext = def_params_node_untyped
-            for def_param_node_untyped in def_params_node.def_parameter():
-                def_param_node: PythonParser.Def_parameterContext = def_param_node_untyped
-                yield def_param_node
+# def get_function_param_nodes(
+#     node: PythonParser.FuncdefContext,
+# ) -> Generator[PythonParser.Def_parameterContext, None, None]:
+#     args_list_node: PythonParser.TypedargslistContext = node.typedargslist()
+#     # args_node : Optional[PythonParser.ArgsContext] = params_node.args()
+#     # def_params_node: Optional[PythonParser.Def_parametersContext] = params_node.def_parameters()
+#     # kwargs_node: Optional[PythonParser.KwargsContext] = params_node.kwargs()
+#     if args_list_node:
+#         def_params_nodes: list[
+#             PythonParser.Def_parameterContext
+#         ] = args_list_node.def_parameters()
+#         for def_params_node_untyped in def_params_nodes:
+#             def_params_node: PythonParser.Def_parametersContext = def_params_node_untyped
+#             for def_param_node_untyped in def_params_node.def_parameter():
+#                 def_param_node: PythonParser.Def_parameterContext = def_param_node_untyped
+#                 yield def_param_node
