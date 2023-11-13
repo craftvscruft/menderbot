@@ -233,6 +233,9 @@ def commit():
     """Generate an informative commit message based on a changeset."""
     check_llm_consent()
     diff_text = git_diff_head(staged=True)
+    if not diff_text.strip():
+        console.print("[yellow]No changes staged. Please stage some then try again.")
+        return
     new_question = change_list_prompt(diff_text)
     with Progress(transient=True) as progress:
         task = progress.add_task("[green]Processing...", total=None)
@@ -240,12 +243,18 @@ def commit():
         progress.update(task, completed=True)
     console.print(f"[cyan]Bot (initial pass)[/cyan]:\n{response_1}")
 
+    if not response_1.strip():
+        console.print("[red]Didn't get a response for change list summary. Try again?")
+        return
     question_2 = commit_msg_prompt(response_1)
     with Progress(transient=True) as progress:
         task = progress.add_task("[green]Processing...", total=None)
         response_2 = unwrap_codeblock(get_response(INSTRUCTIONS, [], question_2))
         progress.update(task, completed=True)
     console.print(f"[cyan]Bot[/cyan]:\n{response_2}")
+    if not response_2.strip():
+        console.print("[red]Didn't get a response for commit message. Try again?")
+        return
     git_commit(response_2)
 
 
