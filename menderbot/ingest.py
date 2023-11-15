@@ -101,6 +101,8 @@ def load_index():
 def get_llm():
     if is_test_override():
         return MockLLM(max_tokens=5)
+    # NB: This uses the default OPENAI_API_KEY env var.
+    # TODO: Use same API key as llm.py.
     return OpenAI(temperature=0, model="gpt-3.5-turbo")
 
 
