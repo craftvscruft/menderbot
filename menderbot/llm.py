@@ -1,6 +1,6 @@
 import os
 
-import openai
+from openai import Client
 from tenacity import (
     retry,
     stop_after_attempt,
@@ -8,12 +8,15 @@ from tenacity import (
 )
 from menderbot.config import has_llm_consent, load_config
 
+openai_client: Client = None
+
 INSTRUCTIONS = (
     """You are helpful electronic assistant with knowledge of Software Engineering."""
 )
 
+MODEL = "gpt-4-1106-preview"
 TEMPERATURE = 0.5
-MAX_TOKENS = 500
+MAX_TOKENS = 1000
 FREQUENCY_PENALTY = 0
 PRESENCE_PENALTY = 0.6
 # limits how many questions we include in the prompt
@@ -28,6 +31,7 @@ def key_env_var() -> str:
 
 def init_openai():
     # pylint: disable-next=[global-statement]
+    global openai_client
     global __key_env_var
     if has_llm_consent():
         config = load_config()
@@ -36,13 +40,14 @@ def init_openai():
         organization_env_var = openai_config.get(
             "organization_env_var", "OPENAI_ORGANIZATION"
         )
-        openai.api_key = os.getenv(__key_env_var)
-        openai.api_base = openai_config.get("api_base", "https://api.openai.com/v1")
-        openai.organization = os.getenv(organization_env_var)
+        openai_client = Client(
+            api_key=os.getenv(__key_env_var),
+            organization=os.getenv(organization_env_var),
+            base_url=openai_config.get("api_base", "https://api.openai.com/v1"),
+        )
 
 
 init_openai()
-
 
 def is_test_override() -> bool:
     return (
@@ -96,8 +101,8 @@ def get_response(
         print("===")
     if is_test_override():
         return override_response_for_test(messages)
-    completion = openai.ChatCompletion.create(
-        model="gpt-4",
+    completion = openai_client.completions.create(
+        model=MODEL,
         messages=messages,
         temperature=TEMPERATURE,
         max_tokens=MAX_TOKENS,
