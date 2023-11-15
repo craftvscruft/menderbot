@@ -8,8 +8,6 @@ from tenacity import (
 )
 from menderbot.config import has_llm_consent, load_config
 
-openai_client: Client = None
-
 INSTRUCTIONS = (
     """You are helpful electronic assistant with knowledge of Software Engineering."""
 )
@@ -22,6 +20,8 @@ PRESENCE_PENALTY = 0.6
 # limits how many questions we include in the prompt
 MAX_CONTEXT_QUESTIONS = 10
 
+
+__openai_client: Client = None
 __key_env_var = "OPENAI_API_KEY"
 
 
@@ -31,7 +31,7 @@ def key_env_var() -> str:
 
 def init_openai():
     # pylint: disable-next=[global-statement]
-    global openai_client
+    global __openai_client
     global __key_env_var
     if has_llm_consent():
         config = load_config()
@@ -40,7 +40,7 @@ def init_openai():
         organization_env_var = openai_config.get(
             "organization_env_var", "OPENAI_ORGANIZATION"
         )
-        openai_client = Client(
+        __openai_client = Client(
             api_key=os.getenv(__key_env_var),
             organization=os.getenv(organization_env_var),
             base_url=openai_config.get("api_base", "https://api.openai.com/v1"),
@@ -83,6 +83,7 @@ def get_response(
     Returns:
         The response text
     """
+    global __openai_client
     # build the messages
     messages = [
         {"role": "system", "content": instructions},
@@ -101,7 +102,7 @@ def get_response(
         print("===")
     if is_test_override():
         return override_response_for_test(messages)
-    completion = openai_client.completions.create(
+    completion = __openai_client.completions.create(
         model=MODEL,
         messages=messages,
         temperature=TEMPERATURE,
