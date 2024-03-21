@@ -24,14 +24,14 @@ Menderbot is usable in development of itself - a very small codebase. For instan
 
 ## System requirements
 
-* Python 3.9+
+* Python 3.10+
 * The environment variable `OPENAI_API_KEY` set to a valid OpenAI API Key.
 * git
 * Make (you already have it)
 
 
 ## Installing from source
-Clone the project and install an editable version (this uses `pip install -e .`):
+Clone the project and install an editable version (this uses `python3 -m pip install -e .`):
 ```
 git clone git@github.com:craftvscruft/menderbot.git
 
@@ -135,6 +135,6 @@ Give a ⭐️ if this project helped you!
 
 ## 📝 License
 
-Copyright © 2023 [Ray Myers](https://github.com/raymyers).
+Copyright © 2024 [Ray Myers](https://github.com/raymyers).
 
 This project is [Apache 2](https://www.apache.org/licenses/LICENSE-2.0) licensed.

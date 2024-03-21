@@ -75,6 +75,7 @@ def test_insert_in_lines_insert_inline_muliple_line():
     ]
     assert list(insert_in_lines(lines, insertions)) == expected
 
+
 def test_insert_in_lines_regression():
     code = """
 def foo(a):

@@ -8,7 +8,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.9", "3.10", "3.11"]
+        python-version: ["3.10", "3.11"]
 
     steps:
       - uses: actions/checkout@v3
@@ -30,7 +30,7 @@ jobs:
           python -m pytest --cov --cov-fail-under=50
       - name: type-checking
         run: |
-          python -m mypy menderbot
+          python -m mypy menderbot --install-types
       - name: build whl
         run: |
           python -m build

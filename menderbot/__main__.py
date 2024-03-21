@@ -84,10 +84,9 @@ def chat():
             console.out("\n")
 
 
-def try_function_type_hints(
-    mypy_cmd, source_file, function_ast, needs_typing
-):
+def try_function_type_hints(mypy_cmd, source_file, function_ast, needs_typing):
     from menderbot.typing import add_type_hints, parse_type_hint_answer  # Lazy import
+
     function_text = function_ast.text
     check_command = (
         f"{mypy_cmd} --shadow-file {source_file.path} {source_file.path}.shadow"
@@ -146,9 +145,7 @@ def type_command(file):
         return
     source_file = SourceFile(file)
     insertions = []
-    for function_ast, needs_typing in process_untyped_functions(
-        source_file
-    ):
+    for function_ast, needs_typing in process_untyped_functions(source_file):
         insertions += try_function_type_hints(
             mypy_cmd, source_file, function_ast, needs_typing
         )

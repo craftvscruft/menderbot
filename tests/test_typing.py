@@ -3,15 +3,11 @@ from unittest.mock import patch
 
 import pytest
 
+from menderbot import python_cst
 from menderbot.__main__ import try_function_type_hints
 from menderbot.code import LanguageStrategy, PythonLanguageStrategy, node_str
 from menderbot.source_file import Insertion, SourceFile, insert_in_lines
-from menderbot.typing import (
-    add_type_hints,
-    parse_type_hint_answer,
-    what_needs_typing,
-)
-from menderbot import python_cst
+from menderbot.typing import add_type_hints, parse_type_hint_answer, what_needs_typing
 
 
 @pytest.fixture
@@ -107,9 +103,7 @@ def foo(a):
         side_effect=lambda _: True,
     ):
         source_file = MockSourceFile()
-        no_hints = try_function_type_hints(
-            "..mypy..", source_file, fn_asts[0], []
-        )
+        no_hints = try_function_type_hints("..mypy..", source_file, fn_asts[0], [])
         assert no_hints == []
         one_hint_no_results = try_function_type_hints(
             "..mypy..", source_file, fn_asts[0], ["a"]

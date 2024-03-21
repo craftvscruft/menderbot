@@ -1,6 +1,7 @@
 import logging
 import os
 import re
+
 from menderbot import python_cst
 from menderbot.source_file import Insertion, SourceFile
 
@@ -20,7 +21,6 @@ def process_untyped_functions(source_file: SourceFile):
         yield (fn_ast, what_needs_typing(fn_ast))
 
 
-
 def parse_type_hint_answer(text: str) -> list:
     def line_to_tuple(line: str) -> tuple:
         [ident, new_type] = line.split(":")
@@ -35,10 +35,12 @@ def parse_type_hint_answer(text: str) -> list:
 
 
 def add_type_hints(
-    function_ast: python_cst.AstNode, hints: list[tuple[str, str]], imports: list[tuple[str, str]]
+    function_ast: python_cst.AstNode,
+    hints: list[tuple[str, str]],
+    imports: list[tuple[str, str]],
 ) -> list:
     print("function_node", function_ast.props)
-    function_name = function_ast.props['name']
+    function_name = function_ast.props["name"]
     sig_ast = function_ast.children_filtered(kind=python_cst.KIND_SIGNATURE)[0]
     def_param_nodes = sig_ast.children_filtered(kind=python_cst.KIND_PARAM)
     return_type = function_ast.props.get(python_cst.PROP_RETURN_TYPE)
@@ -64,7 +66,7 @@ def add_type_hints(
     for ident, new_type in hints:
         add_needed_imports(new_type)
         for param_node in def_param_nodes:
-            if param_node.props.get('name') == ident:
+            if param_node.props.get("name") == ident:
                 insertions.append(
                     Insertion(
                         text=f": {new_type}",
@@ -75,7 +77,9 @@ def add_type_hints(
                     )
                 )
         if ident == "return" and not return_type:
-            signature_ast = function_ast.children_filtered(kind=python_cst.KIND_SIGNATURE)[0]
+            signature_ast = function_ast.children_filtered(
+                kind=python_cst.KIND_SIGNATURE
+            )[0]
             insertions.append(
                 Insertion(
                     text=f" -> {new_type}",
@@ -89,18 +93,16 @@ def add_type_hints(
     return insertions
 
 
-
-
 def what_needs_typing(fn_ast: python_cst.AstNode) -> list[str]:
-    name = fn_ast.props['name']
+    name = fn_ast.props["name"]
     sig_ast = fn_ast.children_filtered(kind=python_cst.KIND_SIGNATURE)[0]
     param_asts = sig_ast.children_filtered(kind=python_cst.KIND_PARAM)
     return_type = fn_ast.props.get(python_cst.PROP_RETURN_TYPE)
     needs_typing = [
         param_ast.props["name"]
         for param_ast in param_asts
-        if "type" not in param_ast.props and
-           param_ast.props["name"] not in ["self", "cls"]
+        if "type" not in param_ast.props
+        and param_ast.props["name"] not in ["self", "cls"]
     ]
     if not return_type and name != "__init__":
         needs_typing.append("return")

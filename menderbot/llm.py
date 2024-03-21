@@ -1,11 +1,14 @@
 import os
+from typing import Optional
 
-from openai import Client
-from tenacity import (
-    retry,
-    stop_after_attempt,
-    wait_random_exponential,
-)
+from llama_index.core import Settings
+from llama_index.core.chat_engine import SimpleChatEngine
+from llama_index.core.llms import ChatMessage, MessageRole
+
+# from openai import Client
+from llama_index.llms.openai import OpenAI  # type: ignore[import-untyped]
+from tenacity import retry, stop_after_attempt, wait_random_exponential
+
 from menderbot.config import has_llm_consent, load_config
 
 INSTRUCTIONS = (
@@ -21,7 +24,7 @@ PRESENCE_PENALTY = 0.6
 MAX_CONTEXT_QUESTIONS = 10
 
 
-__openai_client: Client = None
+__openai_client: Optional[OpenAI] = None
 __key_env_var = "OPENAI_API_KEY"
 
 
@@ -40,14 +43,20 @@ def init_openai():
         organization_env_var = openai_config.get(
             "organization_env_var", "OPENAI_ORGANIZATION"
         )
-        __openai_client = Client(
+        __openai_client = OpenAI(
             api_key=os.getenv(__key_env_var),
             organization=os.getenv(organization_env_var),
             base_url=openai_config.get("api_base", "https://api.openai.com/v1"),
+            temperature=TEMPERATURE,
+            max_tokens=MAX_TOKENS,
+            top_p=1,
+            frequency_penalty=FREQUENCY_PENALTY,
+            presence_penalty=PRESENCE_PENALTY,
         )
 
 
 init_openai()
+
 
 def is_test_override() -> bool:
     return (
@@ -85,33 +94,35 @@ def get_response(
     """
     global __openai_client
     # build the messages
-    messages = [
-        {"role": "system", "content": instructions},
+    history = [
+        ChatMessage(role=MessageRole.SYSTEM, content=instructions),
     ]
     # add the previous questions and answers
     for question, answer in previous_questions_and_answers[-MAX_CONTEXT_QUESTIONS:]:
-        messages.append({"role": "user", "content": question})
-        messages.append({"role": "assistant", "content": answer})
-    # add the new question
-    messages.append({"role": "user", "content": new_question})
+        history.append(ChatMessage(role=MessageRole.USER, content=question))
+        history.append(ChatMessage(role=MessageRole.ASSISTANT, content=answer))
 
     if is_debug():
         print("=== sending to LLM ===")
-        for message in messages:
-            print(message["role"], message["content"])
+        for message in history:
+            print(message.role, message.content)
         print("===")
     if is_test_override():
-        return override_response_for_test(messages)
-    completion = __openai_client.completions.create(
-        model=MODEL,
-        messages=messages,
-        temperature=TEMPERATURE,
-        max_tokens=MAX_TOKENS,
-        top_p=1,
-        frequency_penalty=FREQUENCY_PENALTY,
-        presence_penalty=PRESENCE_PENALTY,
+        return override_response_for_test(history)
+    if __openai_client is None:
+        raise ValueError("OpenAI client is not initialized, check consent?")
+    Settings.llm = __openai_client
+    chat_engine = SimpleChatEngine.from_defaults(
+        chat_history=history,
     )
-    return completion.choices[0].message.content
+    # completion = __openai_client.chat.create(
+    #     model=MODEL,
+    #     messages=messages,
+
+    # )
+    message = ChatMessage(role=MessageRole.USER, content=new_question)
+    return chat_engine.chat(message=message).choices[0].content
+    # return completion.choices[0].message.content
 
 
 def unwrap_codeblock(text):
