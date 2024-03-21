@@ -142,9 +142,9 @@ class PythonLanguageStrategy(LanguageStrategy):
                 import_as_names_ctx: PythonParser.Import_as_namesContext = (
                     ctx.import_as_names()
                 )
-                import_as_name_ctxs: list[
-                    PythonParser.Import_as_nameContext
-                ] = import_as_names_ctx.import_as_name()
+                import_as_name_ctxs: list[PythonParser.Import_as_nameContext] = (
+                    import_as_names_ctx.import_as_name()
+                )
                 # print(type(import_as_name_ctxs))
                 for import_as_name_ctx in import_as_name_ctxs:
                     results.append(
@@ -156,9 +156,9 @@ class PythonLanguageStrategy(LanguageStrategy):
                 dotted_as_names_ctx: PythonParser.Dotted_as_namesContext = (
                     ctx.dotted_as_names()
                 )
-                dotted_as_name_ctxs: list[
-                    PythonParser.Dotted_nameContext
-                ] = dotted_as_names_ctx.dotted_as_name()
+                dotted_as_name_ctxs: list[PythonParser.Dotted_nameContext] = (
+                    dotted_as_names_ctx.dotted_as_name()
+                )
                 for dottedAsNameCtx in dotted_as_name_ctxs:
                     results.append(("", node_str(dottedAsNameCtx)))
 

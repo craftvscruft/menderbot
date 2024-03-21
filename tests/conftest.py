@@ -7,11 +7,11 @@ import pytest
 @pytest.fixture()
 def mock_embeddings():
     with patch(
-        "llama_index.embeddings.OpenAIEmbedding._get_text_embeddings",
+        "llama_index.embeddings.openai.OpenAIEmbedding._get_text_embeddings",
         side_effect=mock_get_text_embeddings,
     ):
         with patch(
-            "llama_index.embeddings.OpenAIEmbedding._get_text_embedding",
+            "llama_index.embeddings.openai.OpenAIEmbedding._get_text_embedding",
             side_effect=mock_get_text_embedding,
         ):
             yield

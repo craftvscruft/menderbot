@@ -1,19 +1,21 @@
-import sys
-from typing import Optional
 import dataclasses
-from dataclasses import dataclass
 import json
+import sys
+from dataclasses import dataclass
+from typing import Optional
+
 import libcst as cst
 from libcst.metadata import PositionProvider, WhitespaceInclusivePositionProvider
 
-KIND_FN = 'fn'
-KIND_PARAM = 'param'
-KIND_SIGNATURE = 'sig'
+KIND_FN = "fn"
+KIND_PARAM = "param"
+KIND_SIGNATURE = "sig"
 
-PROP_NAME = 'name'
-PROP_TYPE = 'type'
-PROP_RETURN_TYPE = 'return_type'
-PROP_DEFAULT = 'default'
+PROP_NAME = "name"
+PROP_TYPE = "type"
+PROP_RETURN_TYPE = "return_type"
+PROP_DEFAULT = "default"
+
 
 class DataClassJsonEncoder(json.JSONEncoder):
     def default(self, o):
@@ -30,7 +32,7 @@ class SourcePosition:
     col: int
 
     def render(self):
-        return f'{self.line}:{self.col}'
+        return f"{self.line}:{self.col}"
 
 
 @dataclass
@@ -39,7 +41,7 @@ class SourceRange:
     end: SourcePosition
 
     def render(self):
-        return f'{self.start.render()}-{self.end.render()}'
+        return f"{self.start.render()}-{self.end.render()}"
 
 
 @dataclass
@@ -59,15 +61,15 @@ class AstNode:
 
     def as_dict(self) -> dict:
         d = {
-            'kind': self.kind,
-            'range': self.src_range.render(),
+            "kind": self.kind,
+            "range": self.src_range.render(),
         }
         if self.props:
-            d['props'] = self.props
+            d["props"] = self.props
         if self.children:
-            d['children'] = self.children
+            d["children"] = self.children
         if self.text:
-            d['text'] = self.text
+            d["text"] = self.text
         return d
 
     def children_filtered(self, kind):
@@ -75,7 +77,11 @@ class AstNode:
 
 
 class FunctionCollector(cst.CSTVisitor):
-    METADATA_DEPENDENCIES = (PositionProvider,WhitespaceInclusivePositionProvider,)
+    METADATA_DEPENDENCIES = (
+        PositionProvider,
+        WhitespaceInclusivePositionProvider,
+    )
+
     def __init__(self, enclosing_module, copy_function_text=False):
         # stack for storing the canonical name of the current function
         super().__init__()
@@ -103,7 +109,6 @@ class FunctionCollector(cst.CSTVisitor):
         src_range = self._src_range(node)
         signature_start = src_range.start
 
-
         return_text = ""
         fn_ast = AstNode(kind=KIND_FN, src_range=src_range)
         if node.returns:
@@ -116,12 +121,12 @@ class FunctionCollector(cst.CSTVisitor):
             signature_end = self._src_range(node.params, include_whitespace=True).end
             signature_end.col = signature_end.col + 1
         signature_range = SourceRange(signature_start, signature_end)
-        qname = '.'.join(tuple(self.stack))
+        qname = ".".join(tuple(self.stack))
 
         fn_ast.props[PROP_NAME] = qname
         signature_ast = AstNode(kind=KIND_SIGNATURE, src_range=signature_range)
         param_text = self.enclosing_module.code_for_node(node.params)
-        signature_ast.text = f'def {name}({param_text}){return_text}'
+        signature_ast.text = f"def {name}({param_text}){return_text}"
         fn_ast.children.append(signature_ast)
         if self.copy_function_text:
             fn_ast.text = self.enclosing_module.code_for_node(node)
@@ -132,26 +137,31 @@ class FunctionCollector(cst.CSTVisitor):
         for param in node.params.kwonly_params:
             signature_ast.children.append(self._param_node_to_ast(param))
         if node.params.star_kwarg:
-            signature_ast.children.append(self._param_node_to_ast(node.params.star_kwarg))
+            signature_ast.children.append(
+                self._param_node_to_ast(node.params.star_kwarg)
+            )
         for param in node.params.posonly_params:
             signature_ast.children.append(self._param_node_to_ast(param))
         self.function_asts.append(fn_ast)
         # Skipping inner functions
-        return (
-            False
-        )
+        return False
 
     def leave_FunctionDef(self, original_node: cst.FunctionDef) -> None:
         self.stack.pop()
 
     def _src_range(self, node: cst.CSTNode, include_whitespace=False):
         if include_whitespace:
-            cst_range = self.get_metadata(cst.metadata.WhitespaceInclusivePositionProvider, node)
+            cst_range = self.get_metadata(
+                cst.metadata.WhitespaceInclusivePositionProvider, node
+            )
         else:
             cst_range = self.get_metadata(cst.metadata.PositionProvider, node)
         return SourceRange(
-            start=SourcePosition(line=cst_range.start.line, col=cst_range.start.column + 1),
-            end=SourcePosition(line=cst_range.end.line, col=cst_range.end.column + 1))
+            start=SourcePosition(
+                line=cst_range.start.line, col=cst_range.start.column + 1
+            ),
+            end=SourcePosition(line=cst_range.end.line, col=cst_range.end.column + 1),
+        )
 
     def _param_node_to_ast(self, param_node: cst.Param) -> AstNode:
         param_range = self._src_range(param_node)
@@ -159,10 +169,14 @@ class FunctionCollector(cst.CSTVisitor):
         annotation = param_node.annotation
         ast = AstNode(kind=KIND_PARAM, src_range=param_range)
         if annotation:
-            ast.props[PROP_TYPE] = self.enclosing_module.code_for_node(annotation.annotation)
+            ast.props[PROP_TYPE] = self.enclosing_module.code_for_node(
+                annotation.annotation
+            )
         ast.props[PROP_NAME] = param_name
         if param_node.default:
-            ast.props[PROP_DEFAULT] = self.enclosing_module.code_for_node(param_node.default)
+            ast.props[PROP_DEFAULT] = self.enclosing_module.code_for_node(
+                param_node.default
+            )
         return ast
 
     # def visit_Name(self, node: cst.Name) -> None:
@@ -186,7 +200,7 @@ def to_json(o):
 
 def _main():
     print("Reading", sys.argv[0])
-    with open(sys.argv[0], 'r') as file:
+    with open(sys.argv[0], "r") as file:
         code = file.read()
     for ast in collect_function_asts(code):
         print(to_json(ast))

@@ -1,8 +1,8 @@
 import pytest
 
+from menderbot import python_cst
 from menderbot.antlr_generated.PythonParser import PythonParser
 from menderbot.code import PythonLanguageStrategy
-from menderbot import python_cst
 
 
 def parse_string_to_tree(str, lang_strat):

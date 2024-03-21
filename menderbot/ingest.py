@@ -3,17 +3,20 @@ import os
 from os.path import splitext
 
 from git import Repo
-from llama_index import (
-    OpenAIEmbedding,
+from llama_index.agent.openai import OpenAIAgent  # type: ignore[import-untyped]
+from llama_index.core import (
     ServiceContext,
     SimpleDirectoryReader,
     StorageContext,
     VectorStoreIndex,
     load_index_from_storage,
 )
-from llama_index.agent import OpenAIAgent
-from llama_index.llms import MockLLM, OpenAI
-from llama_index.tools.query_engine import QueryEngineTool
+from llama_index.core.llms.mock import MockLLM
+from llama_index.core.tools import QueryEngineTool
+from llama_index.embeddings.openai import (  # type: ignore[import-untyped]
+    OpenAIEmbedding,
+)
+from llama_index.llms.openai import OpenAI  # type: ignore[import-untyped]
 
 from menderbot.llm import is_test_override
 
