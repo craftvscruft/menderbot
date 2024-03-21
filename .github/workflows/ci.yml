@@ -30,6 +30,7 @@ jobs:
           python -m pytest --cov --cov-fail-under=50
       - name: type-checking
         run: |
+          python -m pip install lxml-stubs pandas-stubs types-Deprecated types-Pygments types-beautifulsoup4 types-requests types-tqdm types-tree-sitter types-tree-sitter-languages
           python -m mypy menderbot --install-types
       - name: build whl
         run: |
